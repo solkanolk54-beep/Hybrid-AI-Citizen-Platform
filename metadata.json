@@ -1,0 +1,6 @@
+{
+  "name": "منصة المواطن الهجينة الذكية",
+  "description": "النواة الأولى لمنصة المواطن الهجينة الذكية لتتبع ومقارنة أسعار السلع الأساسية والبدائل الأوفر واستشارات الاستهلاك بالدينار الجزائري.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
