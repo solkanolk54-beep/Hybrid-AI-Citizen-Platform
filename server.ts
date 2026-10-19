@@ -48,5 +48,5 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
-// تصدير التطبيق ليعمل على Vercel Serverless
+Vercel Serverless
 export default app;
