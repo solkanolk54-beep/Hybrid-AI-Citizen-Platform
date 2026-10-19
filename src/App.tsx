@@ -61,61 +61,45 @@ export default function App() {
     }, 3500);
   };
 
-  // Initial data loading with Fallback for Serverless / Offline support
+  // Initial data loading from ai_service endpoints
   const loadData = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      const fetchSafe = async (url: string) => {
-        try {
-          const res = await fetch(url);
-          if (res.ok) return await res.json();
-          return null;
-        } catch {
-          return null;
-        }
-      };
-
-      const [prodsData, wilayasData, statsData, reportsData, offersData, alertsData, geoMapData] = await Promise.all([
-        fetchSafe(`/api/ai_service/products?wilayaCode=${selectedWilaya}`),
-        fetchSafe('/api/ai_service/wilayas'),
-        fetchSafe('/api/ai_service/stats'),
-        fetchSafe('/api/ai_service/reports'),
-        fetchSafe('/api/ai_service/producer-offers'),
-        fetchSafe('/api/ai_service/alerts'),
-        fetchSafe('/api/ai_service/reports/geo-map'),
+      const [prodsRes, wilayasRes, statsRes, reportsRes, offersRes, alertsRes, geoRes] = await Promise.all([
+        fetch(`/api/ai_service/products?wilayaCode=${selectedWilaya}`),
+        fetch('/api/ai_service/wilayas'),
+        fetch('/api/ai_service/stats'),
+        fetch('/api/ai_service/reports'),
+        fetch('/api/ai_service/producer-offers'),
+        fetch('/api/ai_service/alerts'),
+        fetch('/api/ai_service/reports/geo-map'),
       ]);
 
-      // If backend products endpoint returned valid data, use it; otherwise rely on local fallback state
-      if (Array.isArray(prodsData) && prodsData.length > 0) {
-        setProducts(prodsData);
-      } else {
-        // Fallback default products if API response is empty/failed
-        setProducts([
-          { id: '1', name: 'زيت المائدة (5 لتر)', category: 'مواد غذائية', referencePrice: 650, currentPrice: 650, unit: 'قارورة', status: 'normal' },
-          { id: '2', name: 'الحليب المدعم', category: 'ألبان', referencePrice: 25, currentPrice: 25, unit: 'لتر', status: 'normal' },
-          { id: '3', name: 'السميد الممتاز (10 كغ)', category: 'حبوب', referencePrice: 500, currentPrice: 500, unit: 'كيس', status: 'normal' },
-          { id: '4', name: 'البطاطا المحلية', category: 'خضر وفواكه', referencePrice: 60, currentPrice: 75, unit: 'كغ', status: 'warning' },
-        ]);
+      if (!prodsRes.ok || !wilayasRes.ok) {
+        throw new Error('فشل جلب بيانات السوق والسلع من الخادم');
       }
 
+      const prodsData = await prodsRes.json();
+      const wilayasData = await wilayasRes.json();
+      const statsData = statsRes.ok ? await statsRes.json() : null;
+      const reportsData = reportsRes.ok ? await reportsRes.json() : [];
+      const offersData = offersRes.ok ? await offersRes.json() : [];
+      const alertsData = alertsRes.ok ? await alertsRes.json() : [];
+      const geoMapData = geoRes.ok ? await geoRes.json() : null;
+
+      setProducts(prodsData);
       if (Array.isArray(wilayasData) && wilayasData.length > 0) {
         setWilayas(wilayasData);
-      } else {
-        setWilayas(DEFAULT_WILAYAS);
       }
-
-      setStats(statsData || { totalReports: 1240, activeAlerts: 18, verifiedProducers: 85, priceStabilityIndex: 92 });
-      setReports(Array.isArray(reportsData) ? reportsData : []);
-      setProducerOffers(Array.isArray(offersData) ? offersData : []);
-      setAlerts(Array.isArray(alertsData) ? alertsData : []);
-      setGeoData(geoMapData || null);
-
+      setStats(statsData);
+      setReports(reportsData);
+      setProducerOffers(offersData);
+      setAlerts(alertsData);
+      setGeoData(geoMapData);
+      setError(null);
     } catch (err: unknown) {
-      console.error('Error loading data:', err);
-      // Clean fallback so user never sees a blocking broken page
-      setWilayas(DEFAULT_WILAYAS);
+      console.error(err);
+      setError('تعذر تحميل البيانات المحلية، يرجى التأكد من تشغيل الخدمة.');
     } finally {
       setLoading(false);
     }
@@ -162,7 +146,6 @@ export default function App() {
       showToast('تم تسجيل وتحديث بلاغات وأسعار الميدان بنجاح.');
     } catch (e) {
       console.error(e);
-      showToast('تم حفظ البلاغ محلياً بنجاح.');
     }
   };
 
@@ -186,6 +169,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         showToast(data.message || 'تم تسجيل تأكيدك بنجاح وتعزيز المراقبة المجتمعية!');
+        // Update local state optimistically
         setGeoData((prev) => {
           if (!prev) return null;
           return {
@@ -206,6 +190,7 @@ export default function App() {
       showToast(`⚠️ تنبيه رقابي عاجل: تم رصد بؤرة تجاوزات جديدة في بلدية ${newReport.commune}!`);
     }
     handleRefreshGeoMap();
+    // Refresh stats in background
     fetch('/api/ai_service/stats')
       .then((res) => (res.ok ? res.json() : null))
       .then((st) => {
@@ -233,7 +218,6 @@ export default function App() {
       showToast('تم تسجيل ونشر عرض المنتج الفلاحي بنجاح.');
     } catch (e) {
       console.error(e);
-      showToast('تم حفظ العرض بنجاح.');
     }
   };
 
