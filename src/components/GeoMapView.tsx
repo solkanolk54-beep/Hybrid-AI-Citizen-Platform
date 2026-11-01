@@ -167,8 +167,32 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
     }
   };
 
-  // Major Wilayas landmark coordinates on map for orientation
-  const MAP_LANDMARKS = [
+  // Live simulation dispatches for field inspection teams
+  const PATROL_DISPATCHES = [
+    { icon: '🚨', type: 'دورية تفتيش وقمع الغش', text: 'جولة تفتيشية جارية في محلات التجزئة لضبط سقف الحليب المدعم 25 د.ج والزيت 650 د.ج', time: 'منذ 3 دقائق' },
+    { icon: '⭐', type: 'سوق ماڨرو العثمانية (ميلة 43)', text: 'تدفق 45 شاحنة خضر وفواكه من ميلة وبسكرة والوادي بأسعار جملة تفاضلية', time: 'منذ 7 دقائق' },
+    { icon: '⚖️', type: 'محضر ضبط رسمي', text: 'تحرير مخالفة بيع مشروط وحجز سلع موجهة للمضاربة في مستودع غير مصرح', time: 'منذ 12 دقيقة' },
+    { icon: '🛡️', type: 'نقطة نموذجية منضبطة', text: 'توثيق نقطة بيع عمومية توفر السلع الأساسية بأسعار الدولة المقننة دون شروط', time: 'منذ 18 دقيقة' },
+  ];
+
+  const [patrolIndex, setPatrolIndex] = useState<number>(0);
+
+  // Rotate patrol ticker every 5 seconds
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setPatrolIndex((prev) => (prev + 1) % PATROL_DISPATCHES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [PATROL_DISPATCHES.length]);
+
+  // Major Wilayas landmark coordinates on map for orientation covering all regions
+  const MAP_LANDMARKS: Array<{
+    name: string;
+    code: string;
+    lat: number;
+    lng: number;
+    isMagroHub?: boolean;
+  }> = [
     { name: 'الجزائر العاصمة', code: '16', lat: 36.7538, lng: 3.0588 },
     { name: 'وهران', code: '31', lat: 35.6987, lng: -0.6349 },
     { name: 'قسنطينة', code: '25', lat: 36.365, lng: 6.6147 },
@@ -176,8 +200,15 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
     { name: 'عنابة', code: '23', lat: 36.9, lng: 7.7667 },
     { name: 'البليدة', code: '09', lat: 36.4703, lng: 2.8277 },
     { name: 'تيزي وزو', code: '15', lat: 36.7118, lng: 4.0459 },
+    { name: 'باتنة', code: '05', lat: 35.556, lng: 6.174 },
     { name: 'بسكرة', code: '07', lat: 34.85, lng: 5.7333 },
     { name: 'الشلف', code: '02', lat: 36.165, lng: 1.334 },
+    { name: 'تلمسان', code: '13', lat: 34.878, lng: -1.315 },
+    { name: 'الجلفة', code: '17', lat: 34.672, lng: 3.25 },
+    { name: 'بوسعادة', code: '59', lat: 35.21, lng: 4.18 },
+    { name: 'العلمة', code: '60', lat: 36.15, lng: 5.69 },
+    { name: 'شلغوم العيد', code: '65', lat: 36.16, lng: 6.17 },
+    { name: 'قطب ماڨرو وادي العثمانية (ميلة 43)', code: '43', lat: 36.245, lng: 6.287, isMagroHub: true },
   ];
 
   return (
@@ -282,21 +313,33 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
             />
           </div>
 
-          {/* Wilaya Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 whitespace-nowrap text-[11px]">الولاية:</span>
+          {/* Wilaya Filter (69 Wilayas) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-slate-500 whitespace-nowrap text-[11px] font-semibold">الولاية:</span>
             <select
               value={selectedWilaya}
               onChange={(e) => setSelectedWilaya(e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600 max-w-[190px] truncate"
             >
-              <option value="all">كل الولايات الجزائرية</option>
+              <option value="all">كل الولايات (69 ولاية ومنطقة)</option>
               {wilayas.map((w) => (
                 <option key={w.code} value={w.code}>
-                  {w.code} - {w.nameAr}
+                  {w.code} - ولاية {w.nameAr} ({w.nameFr})
                 </option>
               ))}
             </select>
+
+            <button
+              onClick={() => setSelectedWilaya(selectedWilaya === '43' ? 'all' : '43')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 border ${
+                selectedWilaya === '43'
+                  ? 'bg-amber-600 text-white border-amber-500 shadow-2xs'
+                  : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+              }`}
+              title="تحديد قطب سوق ماڨرو وادي العثمانية (ميلة 43) على الخريطة"
+            >
+              <span>⭐ ماڨرو ميلة 43</span>
+            </button>
           </div>
 
           {/* Violation Type Filter */}
@@ -484,6 +527,47 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 const { x, y } = projectCoords(lm.lat, lm.lng);
                 const isSelected = selectedWilaya === lm.code;
 
+                if (lm.isMagroHub) {
+                  return (
+                    <g
+                      key={lm.code}
+                      className="cursor-pointer group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedWilaya('43');
+                      }}
+                    >
+                      {/* Magro Pulsating Radar Halo */}
+                      <circle cx={x} cy={y} r="22" fill="#f59e0b" fillOpacity="0.25" className="animate-ping origin-center" />
+                      <circle cx={x} cy={y} r="12" fill="#065f46" stroke="#f59e0b" strokeWidth="2.5" />
+                      <text x={x} y={y + 3.5} textAnchor="middle" fontSize="10" className="pointer-events-none select-none">
+                        ⭐
+                      </text>
+                      <rect
+                        x={x - 56}
+                        y={y - 25}
+                        width="112"
+                        height="17"
+                        rx="4"
+                        fill="#064e3b"
+                        stroke="#34d399"
+                        strokeWidth="1.2"
+                      />
+                      <text
+                        x={x}
+                        y={y - 13}
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="8.5"
+                        fontWeight="900"
+                        className="pointer-events-none select-none"
+                      >
+                        ⭐ سوق ماڨرو العثمانية 43
+                      </text>
+                    </g>
+                  );
+                }
+
                 return (
                   <g
                     key={lm.code}
@@ -637,10 +721,33 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                 <span>نقطة بيع نموذجية منضبطة</span>
               </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs">⭐</span>
+                <span className="text-amber-400 font-bold">قطب ماڨرو وادي العثمانية (ميلة 43)</span>
+              </div>
               <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800">
                 <span className="w-3.5 h-3.5 rounded-full border border-red-500 bg-red-500/30 shrink-0" />
                 <span className="text-red-400 font-semibold">بؤرة سوداء نشطة (تكرار المخالفات)</span>
               </div>
+            </div>
+          </div>
+
+          {/* Tactical Inspection Patrols & Logistics Ticker */}
+          <div className="bg-slate-950/95 border-t border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs text-slate-300">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/90 text-red-400 border border-red-800/80 text-[10px] font-bold shrink-0">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                رادار قمع الغش والتموين
+              </span>
+              <span className="text-[11px] text-slate-200 truncate flex items-center gap-1.5">
+                <span className="font-bold text-amber-400">{PATROL_DISPATCHES[patrolIndex].icon} {PATROL_DISPATCHES[patrolIndex].type}:</span>
+                <span>{PATROL_DISPATCHES[patrolIndex].text}</span>
+                <span className="text-slate-400 font-mono text-[10px]">({PATROL_DISPATCHES[patrolIndex].time})</span>
+              </span>
+            </div>
+            <div className="text-[10px] text-emerald-400 font-mono font-semibold hidden sm:flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>تغطية 69 ولاية نشطة</span>
             </div>
           </div>
         </div>
@@ -814,6 +921,88 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          ) : selectedWilaya !== 'all' ? (
+            /* Selected Wilaya Intelligence Snapshot */
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3.5 animate-in fade-in duration-200">
+              <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold font-mono text-xs">
+                    {selectedWilaya}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">
+                      رادار ولاية {wilayas.find((w) => w.code === selectedWilaya)?.nameAr || selectedWilaya}
+                    </h3>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {wilayas.find((w) => w.code === selectedWilaya)?.nameFr}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedWilaya('all')}
+                  className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded bg-slate-100"
+                >
+                  الكل
+                </button>
+              </div>
+
+              {selectedWilaya === '43' && (
+                <div className="p-3 bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-xl text-xs space-y-1.5 border border-emerald-700/50">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                    <span>⭐</span>
+                    <span>قطب سوق ماڨرو وادي العثمانية (ميلة 43)</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-100 leading-relaxed">
+                    البورصة الإقليمية الكبرى للخضر والفواكه بمحاذاة محول الطريق السيار شرق-غرب. تدفق يومي لآلاف أطنان البطاطا والطماطم والتفاح والتمور بأسعار الجملة ونصف الجملة.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-500 block">مؤشر الأسعار:</span>
+                  <span className="font-mono text-sm font-bold text-slate-900">
+                    {wilayas.find((w) => w.code === selectedWilaya)?.priceIndex || 1.0}x
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-500 block">منافذ الرحمة النشطة:</span>
+                  <span className="font-mono text-sm font-bold text-emerald-700">
+                    {wilayas.find((w) => w.code === selectedWilaya)?.activeRahmaMarkets || 6} منافذ
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-500 block">البلاغات المسجلة:</span>
+                  <span className="font-mono text-sm font-bold text-slate-900">
+                    {reports.filter((r) => r.wilayaCode === selectedWilaya).length} بلاغ
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-500 block">البؤر تحت التفتيش:</span>
+                  <span className="font-mono text-sm font-bold text-red-600">
+                    {hotspots.filter((h) => h.wilayaCode === selectedWilaya).length} بؤرة
+                  </span>
+                </div>
+              </div>
+
+              {wilayas.find((w) => w.code === selectedWilaya)?.popularMarkets && (
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px]">
+                  <span className="font-bold text-slate-700 block mb-1">الأسواق الشعبية والجملة المعتمدة:</span>
+                  <span className="text-slate-600">
+                    {wilayas.find((w) => w.code === selectedWilaya)?.popularMarkets.join(' · ')}
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={() => onOpenReportModalWithCoords()}
+                className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>تسجيل بلاغ في ولاية {wilayas.find((w) => w.code === selectedWilaya)?.nameAr}</span>
+              </button>
             </div>
           ) : (
             /* Default Explanatory Panel */

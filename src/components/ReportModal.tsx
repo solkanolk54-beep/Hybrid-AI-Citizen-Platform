@@ -136,17 +136,22 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  الولاية: *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-slate-700">
+                    الولاية: *
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-mono font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    69 ولاية متاحة
+                  </span>
+                </div>
                 <select
                   value={wilaya}
                   onChange={(e) => setWilaya(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none"
+                  className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   {activeWilayas.map((w) => (
                     <option key={w.code} value={w.nameAr}>
-                      {w.nameAr}
+                      {w.code} - ولاية {w.nameAr} ({w.nameFr})
                     </option>
                   ))}
                 </select>

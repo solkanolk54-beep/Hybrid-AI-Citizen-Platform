@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActiveTab } from '../types/index.ts';
-import { ShoppingCart, Bell, Sprout, Camera, MapPin } from 'lucide-react';
+import { ShoppingCart, Bell, Sprout, Camera, MapPin, ShieldCheck } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -20,18 +20,31 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAlertsDrawer,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 lg:gap-8 h-16">
-          {/* Zone 1: Brand Wordmark */}
+          {/* Zone 1: Professional Textual Logo & Brand Mark */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setActiveTab('monitor')}
-              className="text-right focus:outline-none"
+              className="text-right focus:outline-none flex items-center gap-2.5 group cursor-pointer"
             >
-              <span className="text-lg lg:text-xl font-bold tracking-tight text-slate-900 block">
-                منصة المواطن الهجينة
-              </span>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white flex items-center justify-center shadow-xs border border-emerald-500/30 group-hover:scale-105 transition-all">
+                <ShieldCheck className="w-5 h-5 text-emerald-100" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-slate-900 group-hover:text-emerald-800 transition-colors">
+                    منصة المواطن الهجينة
+                  </span>
+                  <span className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    المنظومة الذكية
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 group-hover:text-slate-600 transition-colors">
+                  المرصد التشاركي للأسعار وحماية القدرة الشرائية
+                </span>
+              </div>
             </button>
           </div>
 

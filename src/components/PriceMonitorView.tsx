@@ -1,6 +1,153 @@
 import React, { useState } from 'react';
 import { ProductItem, WilayaData, DEFAULT_WILAYAS } from '../types/index.ts';
-import { Search, ShieldAlert, CheckCircle, ArrowDownRight, Plus, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Search,
+  ShieldAlert,
+  CheckCircle,
+  ArrowDownRight,
+  Plus,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+  Truck,
+  Sparkles,
+  Clock,
+  Store,
+  MessageSquareText,
+} from 'lucide-react';
+
+export const MAGRO_MERCURIALE_PRODUCE = [
+  {
+    id: 'magro-potato',
+    name: 'بطاطا استهلاك حقلية (حمراء / بيضاء)',
+    wholesalePrice: '45 - 50',
+    wholesalePriceAvg: 48,
+    retailPrice: 85,
+    savingDzd: 37,
+    savingPercent: 43,
+    unit: 'كغ',
+    crateDetails: 'كيس شبكي 10 كغ (480 د.ج)',
+    origin: 'حقول واد سوف وميلة',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-tomato',
+    name: 'طماطم طازجة مستديرة صلبة',
+    wholesalePrice: '55 - 65',
+    wholesalePriceAvg: 60,
+    retailPrice: 110,
+    savingDzd: 50,
+    savingPercent: 45,
+    unit: 'كغ',
+    crateDetails: 'صندوق 10 كغ (600 د.ج)',
+    origin: 'بيوت بسكرة البلاستيكية',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-onion',
+    name: 'بصل جاف أحمر وأبيض',
+    wholesalePrice: '35 - 38',
+    wholesalePriceAvg: 36,
+    retailPrice: 65,
+    savingDzd: 29,
+    savingPercent: 44,
+    unit: 'كغ',
+    crateDetails: 'كيس شبكي 5 كغ (180 د.ج)',
+    origin: 'شلغوم العيد وميلة',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-apple',
+    name: 'تفاح ميلة والأوراس الذهبي والأحمر',
+    wholesalePrice: '160 - 185',
+    wholesalePriceAvg: 170,
+    retailPrice: 280,
+    savingDzd: 110,
+    savingPercent: 39,
+    unit: 'كغ',
+    crateDetails: 'صندوق كرتوني 8 كغ (1360 د.ج)',
+    origin: 'بساتين جبل زواغي وباتنة',
+    type: 'fruit' as const,
+  },
+  {
+    id: 'magro-orange',
+    name: 'برتقال طومسون مائدة جزائري',
+    wholesalePrice: '100 - 115',
+    wholesalePriceAvg: 108,
+    retailPrice: 170,
+    savingDzd: 62,
+    savingPercent: 36,
+    unit: 'كغ',
+    crateDetails: 'قفص بلاستيكي 8 كغ (860 د.ج)',
+    origin: 'سهول ميلة والشلف',
+    type: 'fruit' as const,
+  },
+  {
+    id: 'magro-mandarin',
+    name: 'مندرين كليمونتين بدون بذور',
+    wholesalePrice: '120 - 135',
+    wholesalePriceAvg: 125,
+    retailPrice: 190,
+    savingDzd: 65,
+    savingPercent: 34,
+    unit: 'كغ',
+    crateDetails: 'صندوق 7 كغ (875 د.ج)',
+    origin: 'مزارع متيجة وميلة',
+    type: 'fruit' as const,
+  },
+  {
+    id: 'magro-pepper',
+    name: 'فلفل أخضر حلو وحار',
+    wholesalePrice: '75 - 85',
+    wholesalePriceAvg: 80,
+    retailPrice: 140,
+    savingDzd: 60,
+    savingPercent: 42,
+    unit: 'كغ',
+    crateDetails: 'صندوق 6 كغ (480 د.ج)',
+    origin: 'إنتاج حقلي ميلة وبسكرة',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-carrot',
+    name: 'جزر وادي النجاء مغسول ومنقى',
+    wholesalePrice: '40 - 45',
+    wholesalePriceAvg: 42,
+    retailPrice: 80,
+    savingDzd: 38,
+    savingPercent: 47,
+    unit: 'كغ',
+    crateDetails: 'كيس 5 كغ (210 د.ج)',
+    origin: 'سهل وادي النجاء بميلة',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-zucchini',
+    name: 'كوسة / قرعة خضراء طازجة',
+    wholesalePrice: '60 - 70',
+    wholesalePriceAvg: 65,
+    retailPrice: 120,
+    savingDzd: 55,
+    savingPercent: 45,
+    unit: 'كغ',
+    crateDetails: 'صندوق 6 كغ (390 د.ج)',
+    origin: 'مزارع القرارم قوقة وميلة',
+    type: 'vegetable' as const,
+  },
+  {
+    id: 'magro-dates',
+    name: 'تمور دقلة نور معتمدة فاخرة',
+    wholesalePrice: '370 - 400',
+    wholesalePriceAvg: 385,
+    retailPrice: 650,
+    savingDzd: 265,
+    savingPercent: 40,
+    unit: 'كغ',
+    crateDetails: 'كرتونة 5 كغ (1925 د.ج)',
+    origin: 'واحات بسكرة وطولقة المسوقة بماغرو',
+    type: 'fruit' as const,
+  },
+];
 
 interface PriceMonitorViewProps {
   products: ProductItem[];
@@ -22,6 +169,8 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [ceilingOnly, setCeilingOnly] = useState<boolean>(false);
+  const [showMagroProduce, setShowMagroProduce] = useState<boolean>(false);
+  const [magroProduceFilter, setMagroProduceFilter] = useState<'all' | 'vegetable' | 'fruit'>('all');
   const [expandedAlternatives, setExpandedAlternatives] = useState<Record<string, boolean>>({});
 
   const activeWilayas = wilayas && wilayas.length > 0 ? wilayas : DEFAULT_WILAYAS;
@@ -29,10 +178,10 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
 
   const categories = [
     { id: 'all', label: 'جميع السلع' },
+    { id: 'vegetables', label: 'الخضر والفواكه' },
     { id: 'oils_sugar', label: 'الزيوت والسكريات' },
     { id: 'dairy', label: 'الحليب ومشتقاته' },
     { id: 'cereals', label: 'الحبوب والسميد' },
-    { id: 'vegetables', label: 'الخضر والفواكه' },
     { id: 'meats_poultry', label: 'اللحوم والدواجن' },
     { id: 'legumes', label: 'البقوليات الجافة' },
     { id: 'cleaning', label: 'مواد التنظيف' },
@@ -44,6 +193,54 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
       [id]: !prev[id],
     }));
   };
+
+  const handleAddMagroToBasket = (item: (typeof MAGRO_MERCURIALE_PRODUCE)[0]) => {
+    const productItem: ProductItem = {
+      id: item.id,
+      name: `${item.name} (سوق ماڨرو وادي العثمانية)`,
+      category: 'vegetables',
+      categoryAr: item.type === 'fruit' ? 'فواكه موسمية' : 'خضروات حقلية',
+      unit: item.unit,
+      priceCeiling: null,
+      averageRetailPrice: item.retailPrice,
+      rahmaMarketPrice: item.wholesalePriceAvg,
+      isSubsidized: false,
+      origin: 'local_dz',
+      brandName: 'سوق الجملة ماغرو ميلة',
+      description: `شراء بالجملة ونصف الجملة من سوق ماغرو وادي العثمانية (${item.crateDetails}). المصدر: ${item.origin}.`,
+      alternatives: [],
+      wilayaPrices: { '43': item.wholesalePriceAvg },
+      trend: 'decreasing',
+      availability: 'high',
+      nutritionOrUsageTag: 'خضر وفواكه طازجة بالجملة',
+    };
+    onAddToBasket(productItem);
+  };
+
+  const isMagroRelevant =
+    showMagroProduce ||
+    selectedWilaya === '43' ||
+    selectedCategory === 'vegetables' ||
+    searchQuery.includes('ماقرو') ||
+    searchQuery.includes('ماغرو') ||
+    searchQuery.includes('ماڨرو') ||
+    searchQuery.includes('عثمانية') ||
+    searchQuery.includes('ميلة') ||
+    searchQuery.includes('خضر') ||
+    searchQuery.includes('فواكه');
+
+  const filteredMagroProduce = MAGRO_MERCURIALE_PRODUCE.filter((item) => {
+    if (magroProduceFilter !== 'all' && item.type !== magroProduceFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.origin.toLowerCase().includes(q) ||
+        item.crateDetails.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   const filteredProducts = products.filter((p) => {
     if (selectedCategory !== 'all' && p.category !== selectedCategory) return false;
@@ -69,14 +266,14 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="ابحث عن سلعة، علامة، أو مادة تموينية (مثال: زيت، سميد، دجاج، بطاطا)..."
+              placeholder="ابحث عن سلعة، خضر وفواكه، أو سوق ماڨرو (مثال: بطاطا، طماطم، تفاح، زيت)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
             />
           </div>
 
-          {/* Wilaya Selector with Market Info */}
+          {/* Wilaya Selector with 69 Wilayas Info */}
           <div className="md:col-span-4">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -88,7 +285,7 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
                 >
                   {activeWilayas.map((w) => (
                     <option key={w.code} value={w.code}>
-                      ولاية {w.nameAr} ({w.code}) · {w.activeRahmaMarkets} منافذ تضامنية
+                      {w.code} - ولاية {w.nameAr} ({w.nameFr}) · {w.activeRahmaMarkets} منافذ
                     </option>
                   ))}
                 </select>
@@ -116,7 +313,7 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
         {/* Selected Wilaya Local Markets Strip */}
         {currentWilaya && (
           <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-slate-700">أسواق الرحمة والجملة الموصى بها في {currentWilaya.nameAr}:</span>
               <span>{currentWilaya.popularMarkets.join(' · ')}</span>
             </div>
@@ -127,22 +324,184 @@ export const PriceMonitorView: React.FC<PriceMonitorViewProps> = ({
         )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-6 scrollbar-none">
+      {/* Category Tabs & Magro Quick Access Button */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
+            onClick={() => {
+              setSelectedCategory(cat.id);
+              if (cat.id !== 'vegetables') {
+                setShowMagroProduce(false);
+              }
+            }}
             className={`px-3.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors shrink-0 ${
               selectedCategory === cat.id
-                ? 'bg-emerald-700 text-white shadow-sm'
+                ? 'bg-emerald-700 text-white shadow-sm font-semibold'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
             {cat.label}
           </button>
         ))}
+
+        {/* Dedicated Magro Oued Athmania 43 Produce Hub Button */}
+        <button
+          onClick={() => {
+            setShowMagroProduce(!showMagroProduce);
+            if (!showMagroProduce) {
+              setSelectedCategory('vegetables');
+            }
+          }}
+          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+            showMagroProduce || selectedWilaya === '43'
+              ? 'bg-amber-600 text-white ring-2 ring-amber-400/40'
+              : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
+          }`}
+          title="رصد حي لأسعار الخضر والفواكه بسوق الجملة ماڨرو وادي العثمانية (ولاية ميلة 43)"
+        >
+          <Truck className="w-3.5 h-3.5 text-amber-700" />
+          <span>سوق ماڨرو وادي العثمانية (ميلة 43)</span>
+          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-mono font-bold">
+            بورصة الخضر والفواكه
+          </span>
+        </button>
       </div>
+
+      {/* Dedicated MAGRO Oued Athmania Produce Mercuriale Section */}
+      {isMagroRelevant && (
+        <div className="mb-8 bg-gradient-to-br from-emerald-950 via-slate-900 to-teal-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-emerald-700/40 relative overflow-hidden animate-in fade-in duration-200">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-emerald-700/30">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-bold font-mono tracking-wide flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  MAGRO OUED ATHMANIA · WILAYA DE MILA (43)
+                </span>
+                <span className="text-slate-300 text-xs">سوق الجملة الجهوي للخضر والفواكه (الشركة الوطنية ماغرو)</span>
+              </div>
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>رصد حي لأسعار الخضر والفواكه — سوق ماڨرو وادي العثمانية (ولاية ميلة 43)</span>
+              </h2>
+              <p className="text-xs text-emerald-100/80 max-w-2xl leading-relaxed">
+                متابعة يومية ومباشرة لأسعار الجملة بمربعات الفلاحين والوكلاء مقابل أسعار التجزئة بالمحلات، مع إمكانية إضافة الصناديق والأقفاص للقفة واحتساب التوفير المباشر.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {/* Filter Fruit vs Vegetable */}
+              <div className="bg-slate-800/90 rounded-lg p-0.5 border border-slate-700 flex text-xs">
+                <button
+                  onClick={() => setMagroProduceFilter('all')}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                    magroProduceFilter === 'all' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  الكل (10)
+                </button>
+                <button
+                  onClick={() => setMagroProduceFilter('vegetable')}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                    magroProduceFilter === 'vegetable' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  الخضر (6)
+                </button>
+                <button
+                  onClick={() => setMagroProduceFilter('fruit')}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                    magroProduceFilter === 'fruit' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  الفواكه والتمور (4)
+                </button>
+              </div>
+
+              {onOpenAdvisorWithQuery && (
+                <button
+                  onClick={() =>
+                    onOpenAdvisorWithQuery(
+                      'ما هي أسعار الخضر والفواكه اليوم بسوق ماڨرو وادي العثمانية ولاية ميلة وكيف أوفر بالشراء بنصف الجملة؟'
+                    )
+                  }
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <MessageSquareText className="w-3.5 h-3.5" />
+                  <span>استشارة المستشار</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Real-time Mercuriale Produce Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+            {filteredMagroProduce.map((item) => (
+              <div
+                key={item.id}
+                className="bg-slate-800/80 hover:bg-slate-800 transition-colors rounded-xl p-3 border border-emerald-500/20 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-1 text-xs mb-1.5">
+                    <span className="font-bold text-white text-xs leading-snug">{item.name}</span>
+                    <span className="text-[10px] text-emerald-300 font-mono bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-700/40 shrink-0">
+                      {item.origin}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-xs text-slate-300 mb-1">
+                    <span>جملة ماغرو:</span>
+                    <span className="font-mono font-black text-emerald-400 text-sm">
+                      {item.wholesalePrice} د.ج <span className="text-[10px] text-slate-400">/{item.unit}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                    <span>التجزئة العادية:</span>
+                    <span className="font-mono text-slate-300 line-through">
+                      {item.retailPrice} د.ج
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono bg-slate-900/60 p-1 rounded border border-slate-700/50 mb-2">
+                    {item.crateDetails}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px] mb-2">
+                    <span className="text-emerald-400 font-semibold flex items-center gap-0.5">
+                      <ArrowDownRight className="w-3 h-3 text-emerald-400" />
+                      توفير {item.savingDzd} د.ج ({item.savingPercent}%)
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handleAddMagroToBasket(item)}
+                    className="w-full flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>إضافة للقفة بالجملة</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Operational & Logistics Facts */}
+          <div className="pt-3 border-t border-emerald-700/30 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-100/70">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                الموقع: بلدية وادي العثمانية (ولاية ميلة) — محول الطريق السيار شرق-غرب
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                ذروة التفريغ والنشاط: 04:30 فجراً — 11:30 صباحاً
+              </span>
+            </div>
+            <span className="text-amber-300 font-medium">
+              💡 متاح الشراء بنصف الجملة (صناديق وأقفاص عائلية وتشاركية)
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Results Count & Quick Help */}
       <div className="flex items-center justify-between mb-4 text-xs text-slate-500">

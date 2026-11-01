@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WilayaData, ProductItem, DEFAULT_WILAYAS } from '../types/index.ts';
-import { Sparkles, Send, MapPin, Users, Coins, HelpCircle, Plus, Check } from 'lucide-react';
+import { Sparkles, Send, MapPin, Users, Coins, HelpCircle, Plus, Check, LineChart, ChevronDown, ChevronUp } from 'lucide-react';
+import { PriceTrendsD3Chart } from './PriceTrendsD3Chart.tsx';
 
 interface ChatMessage {
   id: string;
@@ -47,15 +48,16 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
   const [budget, setBudget] = useState<string>('5000');
   const [loading, setLoading] = useState<boolean>(false);
   const [addedIds, setAddedIds] = useState<Record<string, boolean>>({});
+  const [showTrends, setShowTrends] = useState<boolean>(true);
 
   const activeWilayas = wilayas && wilayas.length > 0 ? wilayas : DEFAULT_WILAYAS;
   const currentWilaya = activeWilayas.find((w) => w.code === selectedWilaya) || activeWilayas[0];
 
   const quickPrompts = [
     `عندي ميزانية 4000 د.ج، كيف نوزع قفة أسبوع لعائلة من 4 أفراد في ${currentWilaya.nameAr}؟`,
+    `أين أجد نقاط بيع الدواجن (ONAB) والبقوليات (OAIC) وأسواق الرحمة في ${currentWilaya.nameAr}؟`,
     `ما هي المواد المسقفة قانونياً في الجزائر وما هي أسعارها المحددة؟`,
     `ما هي أفضل بدائل اللحوم الحمراء الأوفر بالدينار الجزائري؟`,
-    `أين أجد نقاط بيع دجاج أوناب وبقوليات الديوان OAIC في ${currentWilaya.nameAr}؟`,
   ];
 
   const handleSend = async (queryText?: string) => {
@@ -195,6 +197,40 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
             <span className="text-slate-500 font-semibold">د.ج</span>
           </div>
         </div>
+      </div>
+
+      {/* D3.js Price Trends Section - قسم الرسوم البيانية لاتجاهات الأسعار */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg">
+              <LineChart className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">
+                منحنيات واتجاهات الأسعار خلال 30 يوماً (D3.js)
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                متابعة حركة المواد واسعة الاستهلاك في {currentWilaya.nameAr} مقارنة بأسواق الرحمة والأسقف القانونية
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowTrends((prev) => !prev)}
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+          >
+            <span>{showTrends ? 'إخفاء الرسوم' : 'عرض الرسوم البيانية'}</span>
+            {showTrends ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {showTrends && (
+          <PriceTrendsD3Chart
+            selectedWilayaName={currentWilaya.nameAr}
+            onAskAdvisorAboutTrend={(query) => handleSend(query)}
+          />
+        )}
       </div>
 
       {/* Quick Prompts Strip */}

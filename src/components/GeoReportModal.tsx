@@ -402,17 +402,22 @@ export const GeoReportModal: React.FC<GeoReportModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-600 mb-1 text-[11px]">
-                  الولاية <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-600 text-[11px] font-semibold">
+                    الولاية <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                    69 ولاية ومنطقة
+                  </span>
+                </div>
                 <select
                   value={wilayaCode}
                   onChange={(e) => setWilayaCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-xs font-medium"
                 >
                   {wilayas.map((w) => (
                     <option key={w.code} value={w.code}>
-                      {w.code} - {w.nameAr} ({w.nameFr})
+                      {w.code} - ولاية {w.nameAr} ({w.nameFr})
                     </option>
                   ))}
                 </select>

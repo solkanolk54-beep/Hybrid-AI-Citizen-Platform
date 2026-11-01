@@ -14,7 +14,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-700" />
             <span className="font-semibold text-slate-700">
-              منصة المواطن الهجينة الذكية — رصد الأسعار والاستهلاك المحلي
+              منصة المواطن الهجينة — رصد الأسعار والاستهلاك المحلي
             </span>
           </div>
 
@@ -53,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
           <div>
             البيانات والأسعار المرجعية بالدينار الجزائري (DZD) محينة وفق قوانين حماية المستهلك وأسواق الرحمة والتعاونيات الوطنية.
           </div>
-          <div>النواة الأولى MVP — جميع الحقوق محفوظة لخدمة المواطن</div>
+          <div>منصة المواطن الهجينة — جميع الحقوق محفوظة لخدمة المواطن</div>
         </div>
       </div>
     </footer>
