@@ -25,14 +25,12 @@ app.use('/api/ai_service', aiServiceRouter);
 
 if (!isProduction && process.env.VERCEL !== '1') {
   // Mount Vite dev server in middleware mode locally
-  (async () => {
-    const { createServer } = await import('vite');
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  })();
+  const { createServer } = await import('vite');
+  const vite = await createServer({
+    server: { middlewareMode: true },
+    appType: 'spa',
+  });
+  app.use(vite.middlewares);
 } else {
   // Production static serving (لـ Vercel أو الإنتاج)
   app.use(express.static(path.resolve(__dirname, 'dist')));
@@ -48,5 +46,5 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
-Vercel Serverless
+// تصدير التطبيق لبيئة Vercel Serverless
 export default app;

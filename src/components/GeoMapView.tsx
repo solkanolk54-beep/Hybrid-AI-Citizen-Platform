@@ -5,35 +5,38 @@ import {
   GeoMapResponse,
   WilayaData,
   ViolationType,
-  MarketAlert,
+  ProductItem,
 } from '../types/index.ts';
 import {
   MapPin,
   ShieldAlert,
-  AlertTriangle,
   Flame,
   CheckCircle2,
   Filter,
   Plus,
   RefreshCw,
   Search,
-  Eye,
-  SlidersHorizontal,
-  Navigation,
   ZoomIn,
   ZoomOut,
-  Maximize2,
   Crosshair,
-  ExternalLink,
-  ShieldCheck,
   Building2,
   Layers,
+  Sparkles,
+  Radio,
+  PackageCheck,
+  TrendingDown,
+  TrendingUp,
+  Activity,
+  Store,
+  Compass,
+  AlertTriangle,
   Info,
 } from 'lucide-react';
 
 interface GeoMapViewProps {
   geoData: GeoMapResponse | null;
   wilayas: WilayaData[];
+  products?: ProductItem[];
   selectedWilaya: string;
   setSelectedWilaya: (w: string) => void;
   onOpenReportModalWithCoords: (coords?: { lat: number; lng: number }) => void;
@@ -41,13 +44,116 @@ interface GeoMapViewProps {
   onRefreshData: () => Promise<void>;
 }
 
-// Algeria Geographic Bounds for GIS Projection (Focusing on northern populated consumer centers while projecting south)
-const ALGERIA_BOUNDS = {
-  minLat: 33.5, // Focusing northern half for crisp visibility of urban clusters
-  maxLat: 37.6,
-  minLng: -1.8,
-  maxLng: 9.5,
+// -------------------------------------------------------------
+// Accurate Geographic Coordinates for ALL 69 Algerian Wilayas
+// -------------------------------------------------------------
+export interface WilayaGeoCoord {
+  code: string;
+  lat: number;
+  lng: number;
+  isMagroHub?: boolean;
+  hubType?: 'magro_wholesale' | 'port' | 'production_hub' | 'logistics_hub';
+}
+
+export const WILAYA_COORDINATES_69: Record<string, WilayaGeoCoord> = {
+  '01': { code: '01', lat: 27.87, lng: -0.29 }, // أدرار
+  '02': { code: '02', lat: 36.16, lng: 1.33, hubType: 'production_hub' }, // الشلف
+  '03': { code: '03', lat: 33.80, lng: 2.87 }, // الأغواط
+  '04': { code: '04', lat: 35.87, lng: 7.11 }, // أم البواقي
+  '05': { code: '05', lat: 35.56, lng: 6.17, hubType: 'logistics_hub' }, // باتنة
+  '06': { code: '06', lat: 36.75, lng: 5.08, hubType: 'port' }, // بجاية
+  '07': { code: '07', lat: 34.85, lng: 5.73, hubType: 'production_hub' }, // بسكرة (قطب الخضر والتمور)
+  '08': { code: '08', lat: 31.62, lng: -2.22 }, // بشار
+  '09': { code: '09', lat: 36.47, lng: 2.83, hubType: 'production_hub' }, // البليدة
+  '10': { code: '10', lat: 36.37, lng: 3.90 }, // البويرة
+  '11': { code: '11', lat: 22.79, lng: 5.52 }, // تمنراست
+  '12': { code: '12', lat: 35.40, lng: 8.12 }, // تبسة
+  '13': { code: '13', lat: 34.88, lng: -1.32 }, // تلمسان
+  '14': { code: '14', lat: 35.37, lng: 1.32, hubType: 'production_hub' }, // تيارت
+  '15': { code: '15', lat: 36.71, lng: 4.05 }, // تيزي وزو
+  '16': { code: '16', lat: 36.75, lng: 3.06, hubType: 'logistics_hub' }, // الجزائر العاصمة
+  '17': { code: '17', lat: 34.67, lng: 3.25, hubType: 'production_hub' }, // الجلفة
+  '18': { code: '18', lat: 36.82, lng: 5.77, hubType: 'port' }, // جيجل
+  '19': { code: '19', lat: 36.19, lng: 5.41, hubType: 'logistics_hub' }, // سطيف
+  '20': { code: '20', lat: 34.83, lng: 0.15 }, // سعيدة
+  '21': { code: '21', lat: 36.87, lng: 6.91, hubType: 'port' }, // سكيكدة
+  '22': { code: '22', lat: 35.19, lng: -0.63 }, // سيدي بلعباس
+  '23': { code: '23', lat: 36.90, lng: 7.77, hubType: 'port' }, // عنابة
+  '24': { code: '24', lat: 36.46, lng: 7.43 }, // قالمة
+  '25': { code: '25', lat: 36.36, lng: 6.61, hubType: 'logistics_hub' }, // قسنطينة
+  '26': { code: '26', lat: 36.26, lng: 2.75 }, // المدية
+  '27': { code: '27', lat: 35.93, lng: 0.09, hubType: 'production_hub' }, // مستغانم
+  '28': { code: '28', lat: 35.71, lng: 4.54 }, // المسيلة
+  '29': { code: '29', lat: 35.40, lng: 0.14, hubType: 'production_hub' }, // معسكر
+  '30': { code: '30', lat: 31.95, lng: 5.33 }, // ورقلة
+  '31': { code: '31', lat: 35.70, lng: -0.63, hubType: 'logistics_hub' }, // وهران
+  '32': { code: '32', lat: 33.68, lng: 1.02 }, // البيض
+  '33': { code: '33', lat: 26.48, lng: 8.48 }, // إليزي
+  '34': { code: '34', lat: 36.07, lng: 4.76 }, // برج بوعريريج
+  '35': { code: '35', lat: 36.76, lng: 3.48 }, // بومرداس
+  '36': { code: '36', lat: 36.77, lng: 8.31 }, // الطارف
+  '37': { code: '37', lat: 27.68, lng: -8.15 }, // تندوف
+  '38': { code: '38', lat: 35.61, lng: 1.81 }, // تيسمسيلت
+  '39': { code: '39', lat: 33.37, lng: 6.87, hubType: 'production_hub' }, // الوادي (قطب البطاطا والخضر)
+  '40': { code: '40', lat: 35.43, lng: 7.14 }, // خنشلة
+  '41': { code: '41', lat: 36.29, lng: 7.95 }, // سوق أهراس
+  '42': { code: '42', lat: 36.59, lng: 2.44, hubType: 'production_hub' }, // تيبازة
+  '43': { code: '43', lat: 36.35, lng: 6.27, isMagroHub: true, hubType: 'magro_wholesale' }, // ميلة (قطب ماڨرو وادي العثمانية)
+  '44': { code: '44', lat: 36.26, lng: 1.97, hubType: 'production_hub' }, // عين الدفلى
+  '45': { code: '45', lat: 33.27, lng: -0.31 }, // النعامة
+  '46': { code: '46', lat: 35.30, lng: -1.14 }, // عين تموشنت
+  '47': { code: '47', lat: 32.49, lng: 3.67 }, // غرداية
+  '48': { code: '48', lat: 35.74, lng: 0.56 }, // غليزان
+  '49': { code: '49', lat: 29.26, lng: 0.23 }, // تيميمون
+  '50': { code: '50', lat: 21.33, lng: 0.95 }, // برج باجي مختار
+  '51': { code: '51', lat: 34.42, lng: 5.06 }, // أولاد جلال
+  '52': { code: '52', lat: 30.13, lng: -2.17 }, // بني عباس
+  '53': { code: '53', lat: 27.20, lng: 2.47 }, // عين صالح
+  '54': { code: '54', lat: 19.57, lng: 5.77 }, // عين قزام
+  '55': { code: '55', lat: 33.10, lng: 6.06 }, // تقرت
+  '56': { code: '56', lat: 24.55, lng: 9.48 }, // جانت
+  '57': { code: '57', lat: 33.95, lng: 5.92 }, // المغير
+  '58': { code: '58', lat: 30.58, lng: 2.88 }, // المنيعة
+  '59': { code: '59', lat: 35.21, lng: 4.18 }, // بوسعادة
+  '60': { code: '60', lat: 36.15, lng: 5.69, hubType: 'logistics_hub' }, // العلمة
+  '61': { code: '61', lat: 35.45, lng: 2.91 }, // عين وسارة
+  '62': { code: '62', lat: 34.11, lng: 2.10 }, // أفلو
+  '63': { code: '63', lat: 35.39, lng: 5.37 }, // بريكة
+  '64': { code: '64', lat: 35.22, lng: 2.32 }, // قصر الشلالة
+  '65': { code: '65', lat: 36.16, lng: 6.17, hubType: 'logistics_hub' }, // شلغوم العيد (ميلة)
+  '66': { code: '66', lat: 34.16, lng: 3.50 }, // مسعد
+  '67': { code: '67', lat: 35.06, lng: 1.05 }, // فرندة
+  '68': { code: '68', lat: 36.56, lng: 3.15 }, // الأربعاء
+  '69': { code: '69', lat: 34.75, lng: 8.06 }, // بئر العاتر
 };
+
+// Map Projection Bounds Options
+const PROJECTION_BOUNDS = {
+  national_69: {
+    minLat: 18.2,
+    maxLat: 37.8,
+    minLng: -8.9,
+    maxLng: 12.3,
+  },
+  north_urban: {
+    minLat: 33.2,
+    maxLat: 37.8,
+    minLng: -2.2,
+    maxLng: 9.0,
+  },
+};
+
+export type HeatmapLayerMode = 'speculation' | 'availability' | 'reports' | 'combined';
+
+export interface CommodityStatusSnapshot {
+  id: string;
+  name: string;
+  icon: string;
+  officialPrice: number | null;
+  status: 'optimal' | 'stable' | 'pressure' | 'scarce';
+  statusAr: string;
+  avgObservedPrice: number;
+}
 
 export const GeoMapView: React.FC<GeoMapViewProps> = ({
   geoData,
@@ -58,12 +164,18 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
   onConfirmReport,
   onRefreshData,
 }) => {
+  // Layer & View States
+  const [activeLayer, setActiveLayer] = useState<HeatmapLayerMode>('speculation');
+  const [territoryExtent, setTerritoryExtent] = useState<'national_69' | 'north_urban'>('national_69');
+  const [selectedCommodityHeat, setSelectedCommodityHeat] = useState<string>('all');
+  const [hoveredWilayaCode, setHoveredWilayaCode] = useState<string | null>(null);
+
+  // Filters & Interactivity
   const [selectedViolationType, setSelectedViolationType] = useState<string>('all');
-  const [selectedCommodity, setSelectedCommodity] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyHotspots, setOnlyHotspots] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<GeoReportPoint | null>(null);
   const [selectedHotspot, setSelectedHotspot] = useState<HotspotCluster | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [mapZoom, setMapZoom] = useState<number>(1);
@@ -73,58 +185,216 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
   const reports = geoData?.reports || [];
   const hotspots = geoData?.hotspots || [];
   const summary = geoData?.summary || {
-    totalReports: 0,
-    blackSpotsCount: 0,
-    dispatchedToEnforcementCount: 0,
+    totalReports: reports.length,
+    blackSpotsCount: hotspots.filter((h) => h.hotspotRiskLevel === 'high_black_spot').length,
+    dispatchedToEnforcementCount: reports.filter((r) => r.status === 'dispatched_to_enforcement').length,
     mostReportedCommodity: 'حليب أكياس 25 د.ج',
-    mostCompliantWilaya: 'سطيف والبليدة',
+    mostCompliantWilaya: 'ميلة وسطيف والبليدة',
   };
 
-  // Filtered reports for map & list
-  const filteredReports = useMemo(() => {
-    return reports.filter((r) => {
-      if (selectedWilaya !== 'all' && r.wilayaCode !== selectedWilaya) return false;
-      if (selectedViolationType !== 'all' && r.violationType !== selectedViolationType) return false;
-      if (selectedCommodity !== 'all') {
-        if (!r.productName.toLowerCase().includes(selectedCommodity.toLowerCase())) return false;
+  // -------------------------------------------------------------
+  // Real-time Speculation & Commodity Availability Engine (69 Wilayas)
+  // -------------------------------------------------------------
+  const wilayaIntelligence = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        wilaya: WilayaData;
+        geo: WilayaGeoCoord;
+        speculationScore: number; // 0..100
+        speculationLevel: 'critical' | 'high' | 'medium' | 'stable';
+        speculationLabelAr: string;
+        speculationColor: string;
+        availabilityScore: number; // 0..100
+        availabilityLevel: 'optimal' | 'stable' | 'pressure' | 'scarce';
+        availabilityLabelAr: string;
+        availabilityColor: string;
+        reportsCount: number;
+        hotspotsCount: number;
+        criticalViolationsCount: number;
+        commodities: CommodityStatusSnapshot[];
       }
-      if (onlyHotspots) {
-        const inHotspot = hotspots.some(
-          (h) => h.wilayaCode === r.wilayaCode && h.commune === r.commune
-        );
-        if (!inHotspot) return false;
+    >();
+
+    wilayas.forEach((w) => {
+      const geo = WILAYA_COORDINATES_69[w.code] || {
+        code: w.code,
+        lat: 35.5,
+        lng: 3.0,
+      };
+
+      const wReports = reports.filter((r) => r.wilayaCode === w.code);
+      const wHotspots = hotspots.filter((h) => h.wilayaCode === w.code);
+      const critCount = wReports.filter(
+        (r) =>
+          r.violationType === 'price_gouging_ceiling' ||
+          r.violationType === 'hoarding_speculation' ||
+          r.violationType === 'conditional_selling'
+      ).length;
+
+      // Base calculation on wilaya price index (baseline 1.0)
+      let specScore = Math.round(
+        Math.max(10, Math.min(96, (w.priceIndex - 0.9) * 160 + critCount * 14 + (wHotspots.length > 0 ? 25 : 0)))
+      );
+
+      // Hub discounts (Mila 43 Magro hub has strong transparency & wholesale flow)
+      if (w.code === '43') {
+        specScore = Math.max(12, specScore - 28);
       }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matches =
-          r.productName.toLowerCase().includes(q) ||
-          r.commune.toLowerCase().includes(q) ||
-          r.storeName.toLowerCase().includes(q) ||
-          r.wilaya.toLowerCase().includes(q) ||
-          r.violationTypeAr.toLowerCase().includes(q);
-        if (!matches) return false;
+
+      let specLevel: 'critical' | 'high' | 'medium' | 'stable' = 'stable';
+      let specLabelAr = 'سوق منضبط ومستقر';
+      let specColor = '#10b981';
+
+      if (specScore >= 75) {
+        specLevel = 'critical';
+        specLabelAr = 'بؤرة مضاربة حرجة (خرق أسعار)';
+        specColor = '#ef4444';
+      } else if (specScore >= 52) {
+        specLevel = 'high';
+        specLabelAr = 'ضغط أسعار ونشاط مضاربة';
+        specColor = '#f97316';
+      } else if (specScore >= 32) {
+        specLevel = 'medium';
+        specLabelAr = 'رصد متوسط وتفاوت طفيف';
+        specColor = '#eab308';
       }
-      return true;
+
+      // Commodity Availability Score (0..100)
+      // High score means excellent abundance, low score means pressure or scarcity
+      let availScore = Math.round(
+        Math.max(15, Math.min(98, 100 - specScore * 0.7 + (w.activeRahmaMarkets * 2.2)))
+      );
+
+      // Major agriculture or hub boosts
+      if (w.code === '43' || w.code === '07' || w.code === '39' || w.code === '29' || w.code === '19') {
+        availScore = Math.min(98, availScore + 18);
+      }
+
+      let availLevel: 'optimal' | 'stable' | 'pressure' | 'scarce' = 'optimal';
+      let availLabelAr = 'وفرة عالية ومستمرة';
+      let availColor = '#10b981';
+
+      if (availScore < 40) {
+        availLevel = 'scarce';
+        availLabelAr = 'شح وتذبذب في التموين';
+        availColor = '#dc2626';
+      } else if (availScore < 62) {
+        availLevel = 'pressure';
+        availLabelAr = 'ضغط في تدفق السلع';
+        availColor = '#f59e0b';
+      } else if (availScore < 80) {
+        availLevel = 'stable';
+        availLabelAr = 'وفرة طبيعية مستقرة';
+        availColor = '#06b6d4';
+      }
+
+      // Commodity specific status matrix
+      const commodities: CommodityStatusSnapshot[] = [
+        {
+          id: 'milk',
+          name: 'حليب أكياس 25 د.ج',
+          icon: '🥛',
+          officialPrice: 25,
+          status: critCount > 2 ? 'pressure' : 'optimal',
+          statusAr: critCount > 2 ? 'تذبذب في بعض الأحياء' : 'متوفر بالسعر المسقف',
+          avgObservedPrice: critCount > 2 ? 30 : 25,
+        },
+        {
+          id: 'oil',
+          name: 'زيت المائدة 5 لتر 650 د.ج',
+          icon: '🛢️',
+          officialPrice: 650,
+          status: critCount > 1 ? 'pressure' : 'optimal',
+          statusAr: critCount > 1 ? 'رصد بيع مشروط محدود' : 'متوفر بانتظام 650 د.ج',
+          avgObservedPrice: critCount > 1 ? 675 : 650,
+        },
+        {
+          id: 'semolina',
+          name: 'سميد 10 كغ ممتاز',
+          icon: '🌾',
+          officialPrice: 500,
+          status: 'optimal',
+          statusAr: 'تدفق كافٍ من دواوين الحبوب',
+          avgObservedPrice: 500,
+        },
+        {
+          id: 'sugar',
+          name: 'سكر أبيض 1 كغ',
+          icon: '🧂',
+          officialPrice: 95,
+          status: 'optimal',
+          statusAr: 'وفرة تامة بمنافذ التجزئة',
+          avgObservedPrice: 95,
+        },
+        {
+          id: 'potatoes',
+          name: 'بطاطا الاستهلاك',
+          icon: '🥔',
+          officialPrice: null,
+          status: w.code === '43' || w.code === '39' ? 'optimal' : 'stable',
+          statusAr: w.code === '43' ? 'وفرة كبرى بسوق ماڨرو (45-60 د.ج)' : 'متوفرة بأسعار معتدلة',
+          avgObservedPrice: w.code === '43' ? 52 : 75,
+        },
+        {
+          id: 'poultry',
+          name: 'دجاج أوناب (ONAB)',
+          icon: '🍗',
+          officialPrice: 320,
+          status: 'optimal',
+          statusAr: 'سعر ترويجي 320-350 د.ج',
+          avgObservedPrice: 335,
+        },
+      ];
+
+      map.set(w.code, {
+        wilaya: w,
+        geo,
+        speculationScore: specScore,
+        speculationLevel: specLevel,
+        speculationLabelAr: specLabelAr,
+        speculationColor: specColor,
+        availabilityScore: availScore,
+        availabilityLevel: availLevel,
+        availabilityLabelAr: availLabelAr,
+        availabilityColor: availColor,
+        reportsCount: wReports.length,
+        hotspotsCount: wHotspots.length,
+        criticalViolationsCount: critCount,
+        commodities,
+      });
     });
-  }, [reports, hotspots, selectedWilaya, selectedViolationType, selectedCommodity, onlyHotspots, searchQuery]);
 
-  // Convert GPS Coordinates (lat/lng) to SVG canvas coordinates (0..800 x, 0..480 y)
+    return map;
+  }, [wilayas, reports, hotspots]);
+
+  // Active Bounds based on user toggle
+  const bounds = PROJECTION_BOUNDS[territoryExtent];
+
+  // Convert GPS Coordinates (lat/lng) to SVG canvas coordinates (viewBox 0 0 900 520)
   const projectCoords = (lat: number, lng: number) => {
-    const svgWidth = 800;
-    const svgHeight = 440;
+    const svgWidth = 900;
+    const svgHeight = 520;
+    const paddingX = 45;
+    const paddingY = 40;
 
-    // Normalization with padding
-    const clampedLat = Math.min(Math.max(lat, ALGERIA_BOUNDS.minLat), ALGERIA_BOUNDS.maxLat);
-    const clampedLng = Math.min(Math.max(lng, ALGERIA_BOUNDS.minLng), ALGERIA_BOUNDS.maxLng);
+    const clampedLat = Math.min(Math.max(lat, bounds.minLat), bounds.maxLat);
+    const clampedLng = Math.min(Math.max(lng, bounds.minLng), bounds.maxLng);
 
-    // Invert X because RTL / Longitude increases Eastward (Right in normal map, but right-to-left layout awareness)
-    const x = ((clampedLng - ALGERIA_BOUNDS.minLng) / (ALGERIA_BOUNDS.maxLng - ALGERIA_BOUNDS.minLng)) * (svgWidth - 80) + 40;
-    const y = ((ALGERIA_BOUNDS.maxLat - clampedLat) / (ALGERIA_BOUNDS.maxLat - ALGERIA_BOUNDS.minLat)) * (svgHeight - 80) + 40;
+    const x =
+      ((clampedLng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) *
+        (svgWidth - paddingX * 2) +
+      paddingX;
+
+    const y =
+      ((bounds.maxLat - clampedLat) / (bounds.maxLat - bounds.minLat)) *
+        (svgHeight - paddingY * 2) +
+      paddingY;
 
     return { x, y };
   };
 
-  // Convert SVG click back to approximate Lat/Lng for pinpoint reporting
+  // Convert SVG click back to Lat/Lng for pinpoint reporting
   const handleMapCanvasClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!isPinModeActive) return;
 
@@ -132,14 +402,23 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const svgWidth = 800;
-    const svgHeight = 440;
+    const svgWidth = 900;
+    const svgHeight = 520;
+    const paddingX = 45;
+    const paddingY = 40;
 
-    const lng = ALGERIA_BOUNDS.minLng + ((clickX - 40) / (svgWidth - 80)) * (ALGERIA_BOUNDS.maxLng - ALGERIA_BOUNDS.minLng);
-    const lat = ALGERIA_BOUNDS.maxLat - ((clickY - 40) / (svgHeight - 80)) * (ALGERIA_BOUNDS.maxLat - ALGERIA_BOUNDS.minLat);
+    const lng =
+      bounds.minLng +
+      ((clickX - paddingX) / (svgWidth - paddingX * 2)) * (bounds.maxLng - bounds.minLng);
+    const lat =
+      bounds.maxLat -
+      ((clickY - paddingY) / (svgHeight - paddingY * 2)) * (bounds.maxLat - bounds.minLat);
 
     setIsPinModeActive(false);
-    onOpenReportModalWithCoords({ lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) });
+    onOpenReportModalWithCoords({
+      lat: Number(lat.toFixed(4)),
+      lng: Number(lng.toFixed(4)),
+    });
   };
 
   const handleRefresh = async () => {
@@ -167,159 +446,284 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
     }
   };
 
-  // Live simulation dispatches for field inspection teams
+  // Filtered reports for map & list
+  const filteredReports = useMemo(() => {
+    return reports.filter((r) => {
+      if (selectedWilaya !== 'all' && r.wilayaCode !== selectedWilaya) return false;
+      if (selectedViolationType !== 'all' && r.violationType !== selectedViolationType) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          r.productName.toLowerCase().includes(q) ||
+          r.commune.toLowerCase().includes(q) ||
+          r.storeName.toLowerCase().includes(q) ||
+          r.wilaya.toLowerCase().includes(q) ||
+          r.violationTypeAr.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [reports, selectedWilaya, selectedViolationType, searchQuery]);
+
+  // Selected Wilaya Intelligence Snapshot
+  const activeWilayaData = useMemo(() => {
+    if (selectedWilaya === 'all') return null;
+    return wilayaIntelligence.get(selectedWilaya) || null;
+  }, [selectedWilaya, wilayaIntelligence]);
+
+  // Dispatches Ticker
   const PATROL_DISPATCHES = [
-    { icon: '🚨', type: 'دورية تفتيش وقمع الغش', text: 'جولة تفتيشية جارية في محلات التجزئة لضبط سقف الحليب المدعم 25 د.ج والزيت 650 د.ج', time: 'منذ 3 دقائق' },
-    { icon: '⭐', type: 'سوق ماڨرو العثمانية (ميلة 43)', text: 'تدفق 45 شاحنة خضر وفواكه من ميلة وبسكرة والوادي بأسعار جملة تفاضلية', time: 'منذ 7 دقائق' },
-    { icon: '⚖️', type: 'محضر ضبط رسمي', text: 'تحرير مخالفة بيع مشروط وحجز سلع موجهة للمضاربة في مستودع غير مصرح', time: 'منذ 12 دقيقة' },
-    { icon: '🛡️', type: 'نقطة نموذجية منضبطة', text: 'توثيق نقطة بيع عمومية توفر السلع الأساسية بأسعار الدولة المقننة دون شروط', time: 'منذ 18 دقيقة' },
+    {
+      icon: '⭐',
+      type: 'سوق ماڨرو وادي العثمانية (ميلة 43)',
+      text: 'تدفق قياسي لشاحنات الخضر والفواكه من ميلة وبسكرة والوادي بأسعار جملة تفاضلية حقيقية',
+      time: 'منذ دقيقتين',
+    },
+    {
+      icon: '🚨',
+      type: 'دورية تفتيش وقمع الغش',
+      text: 'جولة تفتيشية جارية في محلات التجزئة لضبط سقف الحليب المدعم 25 د.ج والزيت 650 د.ج',
+      time: 'منذ 5 دقائق',
+    },
+    {
+      icon: '⚖️',
+      type: 'محضر ضبط رسمي',
+      text: 'تحرير مخالفة بيع مشروط وحجز سلع موجهة للمضاربة في مستودع غير مصرح بوسط البلاد',
+      time: 'منذ 11 دقيقة',
+    },
+    {
+      icon: '🟢',
+      type: 'ديوان الحبوب والبقول الجافة (OAIC)',
+      text: 'تفريغ شحنات سميد ممتاز معبأة 10 كغ بـ 500 د.ج بمنافذ البيع المباشرة لتأمين التموين',
+      time: 'منذ 16 دقيقة',
+    },
   ];
 
   const [patrolIndex, setPatrolIndex] = useState<number>(0);
-
-  // Rotate patrol ticker every 5 seconds
   React.useEffect(() => {
     const timer = setInterval(() => {
       setPatrolIndex((prev) => (prev + 1) % PATROL_DISPATCHES.length);
-    }, 5000);
+    }, 5500);
     return () => clearInterval(timer);
   }, [PATROL_DISPATCHES.length]);
 
-  // Major Wilayas landmark coordinates on map for orientation covering all regions
-  const MAP_LANDMARKS: Array<{
-    name: string;
-    code: string;
-    lat: number;
-    lng: number;
-    isMagroHub?: boolean;
-  }> = [
-    { name: 'الجزائر العاصمة', code: '16', lat: 36.7538, lng: 3.0588 },
-    { name: 'وهران', code: '31', lat: 35.6987, lng: -0.6349 },
-    { name: 'قسنطينة', code: '25', lat: 36.365, lng: 6.6147 },
-    { name: 'سطيف', code: '19', lat: 36.1911, lng: 5.4137 },
-    { name: 'عنابة', code: '23', lat: 36.9, lng: 7.7667 },
-    { name: 'البليدة', code: '09', lat: 36.4703, lng: 2.8277 },
-    { name: 'تيزي وزو', code: '15', lat: 36.7118, lng: 4.0459 },
-    { name: 'باتنة', code: '05', lat: 35.556, lng: 6.174 },
-    { name: 'بسكرة', code: '07', lat: 34.85, lng: 5.7333 },
-    { name: 'الشلف', code: '02', lat: 36.165, lng: 1.334 },
-    { name: 'تلمسان', code: '13', lat: 34.878, lng: -1.315 },
-    { name: 'الجلفة', code: '17', lat: 34.672, lng: 3.25 },
-    { name: 'بوسعادة', code: '59', lat: 35.21, lng: 4.18 },
-    { name: 'العلمة', code: '60', lat: 36.15, lng: 5.69 },
-    { name: 'شلغوم العيد', code: '65', lat: 36.16, lng: 6.17 },
-    { name: 'قطب ماڨرو وادي العثمانية (ميلة 43)', code: '43', lat: 36.245, lng: 6.287, isMagroHub: true },
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Top Banner / Hero */}
-      <div className="bg-gradient-to-l from-slate-900 via-slate-850 to-slate-900 text-white rounded-2xl p-5 lg:p-6 mb-6 shadow-md border border-slate-800">
+      {/* Top Banner / Hero Header */}
+      <div className="bg-gradient-to-l from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl p-5 lg:p-6 mb-6 shadow-xl border border-slate-800">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-bold font-mono tracking-wide flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                GIS LIVE MONITOR
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold font-mono tracking-wide flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                GIS INTELLIGENCE 69 WILAYAS
               </span>
-              <span className="text-slate-400 text-xs">نظام الرصد الجغرافي والرقابة الميدانية</span>
+              <span className="text-slate-400 text-xs">نظام الرصد الجغرافي والخرائط الحرارية اللحظية</span>
+              <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                ⭐ قطب ماڨرو ميلة 43 نشط
+              </span>
             </div>
             <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <span>خريطة التجاوزات وبوابة البلاغات الميدانية</span>
+              <span>خريطة التجاوزات والحرارة اللحظية للولايات الـ 69</span>
             </h1>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              منظومة رصد مجتمعية فورية بالدينار الجزائري لتحديد بؤر المضاربة واحتكار المواد الأساسية (حليب 25 د.ج، زيت، سميد) وإحالتها تلقائياً لمصالح المراقبة وقمع الغش.
+              منظومة رصد وتحليل خرائطي حراري تغطي كافة ولايات ومناطق الجزائر (01 إلى 69) لكشف بؤر المضاربة والاحتكار ومتابعة وفرة السلع الأساسية المقننة لحظياً.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-              <span>تحديث البلاغات</span>
+              <span>تحديث البيانات اللحظية</span>
             </button>
 
             <button
               onClick={() => onOpenReportModalWithCoords()}
-              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 hover:shadow-red-600/20"
+              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 hover:shadow-red-600/30"
             >
               <Plus className="w-4 h-4" />
-              <span>تسجيل بلاغ جغرافي ميداني</span>
+              <span>تسجيل بلاغ ميداني جغرافي</span>
             </button>
           </div>
         </div>
 
         {/* Analytical KPI Counters */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-800/80">
-          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/60">
-            <span className="text-[11px] text-slate-400 block mb-1">إجمالي البلاغات الميدانية</span>
+          <div className="bg-slate-850/60 rounded-xl p-3 border border-slate-800">
+            <span className="text-[11px] text-slate-400 block mb-1">الولايات المربوطة بالخريطة</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono tabular-nums text-white">
-                {summary.totalReports}
-              </span>
-              <span className="text-[10px] text-emerald-400 font-medium">رصد مجتمعي نشط</span>
+              <span className="text-xl font-bold font-mono tabular-nums text-white">69</span>
+              <span className="text-[10px] text-emerald-400 font-medium">تغطية وطنية شاملة</span>
             </div>
           </div>
 
           <div className="bg-red-950/30 rounded-xl p-3 border border-red-900/40">
             <span className="text-[11px] text-red-300 block mb-1 flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 text-red-400" />
-              <span>البؤر السوداء للمضاربة</span>
+              <span>بؤر المضاربة المرصودة (Heatmap)</span>
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold font-mono tabular-nums text-red-400">
-                {summary.blackSpotsCount}
+                {Array.from(wilayaIntelligence.values()).filter((w) => w.speculationLevel === 'critical').length}
               </span>
-              <span className="text-[10px] text-red-300">مناطق تحت التفتيش</span>
+              <span className="text-[10px] text-red-300">ولايات تحت الرقابة المشددة</span>
             </div>
           </div>
 
-          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/60">
-            <span className="text-[11px] text-slate-400 block mb-1">المحالة لمصالح قمع الغش</span>
+          <div className="bg-emerald-950/30 rounded-xl p-3 border border-emerald-900/40">
+            <span className="text-[11px] text-emerald-300 block mb-1 flex items-center gap-1">
+              <PackageCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>ولايات ذات وفرة عالية (&gt;80%)</span>
+            </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono tabular-nums text-amber-400">
-                {summary.dispatchedToEnforcementCount}
+              <span className="text-xl font-bold font-mono tabular-nums text-emerald-400">
+                {Array.from(wilayaIntelligence.values()).filter((w) => w.availabilityLevel === 'optimal').length}
               </span>
-              <span className="text-[10px] text-slate-400">تأكيدات رسمية</span>
+              <span className="text-[10px] text-emerald-300">تموين مستقر بأسعار الدولة</span>
             </div>
           </div>
 
-          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/60">
-            <span className="text-[11px] text-slate-400 block mb-1">المادة الأكثر تضرراً</span>
+          <div className="bg-amber-950/30 rounded-xl p-3 border border-amber-900/40">
+            <span className="text-[11px] text-amber-300 block mb-1 flex items-center gap-1">
+              <Store className="w-3.5 h-3.5 text-amber-400" />
+              <span>قطب ماڨرو وادي العثمانية (ميلة 43)</span>
+            </span>
             <div className="flex items-baseline gap-2 truncate">
-              <span className="text-sm font-bold text-emerald-300 truncate">
-                {summary.mostReportedCommodity}
+              <span className="text-sm font-bold text-amber-300 truncate">
+                4500 طن/يومياً خضر وفواكه
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter and Control Toolbar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-5 shadow-2xs">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs">
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث بالبلدية، السلعة، اسم المحل، أو الولاية..."
-              className="w-full pl-3 pr-8 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:bg-white text-xs"
-            />
+      {/* Control & Layer Navigation Toolbar */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-5 shadow-xs space-y-3.5">
+        {/* Layer Mode Selector Pills */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-bold text-slate-700 ml-2 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-emerald-600" />
+              <span>الطبقة المرئية:</span>
+            </span>
+
+            <button
+              onClick={() => setActiveLayer('speculation')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeLayer === 'speculation'
+                  ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-500/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>🔥 بؤر المضاربة (Heatmap)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveLayer('availability')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeLayer === 'availability'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <PackageCheck className="w-3.5 h-3.5" />
+              <span>🟢 وفرة السلع الأساسية (Heatmap)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveLayer('reports')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeLayer === 'reports'
+                  ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>📍 البلاغات الميدانية الحية</span>
+            </button>
+
+            <button
+              onClick={() => setActiveLayer('combined')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeLayer === 'combined'
+                  ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-800/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5 text-amber-400" />
+              <span>🌐 العرض الشامل المدمج</span>
+            </button>
           </div>
 
-          {/* Wilaya Filter (69 Wilayas) */}
+          {/* Territory Extent Toggle */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl shrink-0 self-start md:self-auto">
+            <button
+              onClick={() => setTerritoryExtent('national_69')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+                territoryExtent === 'national_69'
+                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-600" />
+              <span>كامل التراب (69 ولاية)</span>
+            </button>
+
+            <button
+              onClick={() => setTerritoryExtent('north_urban')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+                territoryExtent === 'north_urban'
+                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+              <span>الشمال والوسط التجاري</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Second Row: Specific Commodity Selection (when in Availability mode) & Wilaya Quick Filter */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs">
+          {/* Commodity Pill Selector for Availability Heatmap */}
+          {activeLayer === 'availability' && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+              <span className="text-slate-500 font-semibold whitespace-nowrap text-[11px]">سلعة الوفرة:</span>
+              {[
+                { id: 'all', label: 'المؤشر العام' },
+                { id: 'milk', label: 'حليب 25 د.ج' },
+                { id: 'oil', label: 'زيت 650 د.ج' },
+                { id: 'semolina', label: 'سميد 10 كغ' },
+                { id: 'potatoes', label: 'بطاطا ماڨرو' },
+                { id: 'poultry', label: 'دجاج أوناب' },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCommodityHeat(c.id)}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all border ${
+                    selectedCommodityHeat === c.id
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Wilaya Filter (All 69 Wilayas) */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-slate-500 whitespace-nowrap text-[11px] font-semibold">الولاية:</span>
+            <span className="text-slate-500 whitespace-nowrap text-[11px] font-semibold">تحديد ولاية:</span>
             <select
               value={selectedWilaya}
               onChange={(e) => setSelectedWilaya(e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600 max-w-[190px] truncate"
+              className="px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600 max-w-[210px] truncate"
             >
               <option value="all">كل الولايات (69 ولاية ومنطقة)</option>
               {wilayas.map((w) => (
@@ -331,62 +735,28 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
 
             <button
               onClick={() => setSelectedWilaya(selectedWilaya === '43' ? 'all' : '43')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 border ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border ${
                 selectedWilaya === '43'
-                  ? 'bg-amber-600 text-white border-amber-500 shadow-2xs'
+                  ? 'bg-amber-600 text-white border-amber-500 shadow-xs'
                   : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
               }`}
-              title="تحديد قطب سوق ماڨرو وادي العثمانية (ميلة 43) على الخريطة"
+              title="تحديد قطب سوق ماڨرو وادي العثمانية (ميلة 43)"
             >
               <span>⭐ ماڨرو ميلة 43</span>
             </button>
           </div>
 
-          {/* Violation Type Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 whitespace-nowrap text-[11px]">المخالفة:</span>
-            <select
-              value={selectedViolationType}
-              onChange={(e) => setSelectedViolationType(e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600"
-            >
-              <option value="all">كافة التصنيفات</option>
-              <option value="price_gouging_ceiling">خرق السعر المسقف</option>
-              <option value="conditional_selling">بيع مشروط</option>
-              <option value="hoarding_speculation">احتكار وتخزين</option>
-              <option value="no_price_display">عدم إشهار الأسعار</option>
-              <option value="model_compliant_store">نقاط بيع نموذجية منضبطة</option>
-            </select>
-          </div>
-
-          {/* Commodity quick filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 whitespace-nowrap text-[11px]">السلعة:</span>
-            <select
-              value={selectedCommodity}
-              onChange={(e) => setSelectedCommodity(e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-emerald-600"
-            >
-              <option value="all">كل السلع</option>
-              <option value="حليب">حليب أكياس</option>
-              <option value="زيت">زيت المائدة</option>
-              <option value="سميد">سميد</option>
-              <option value="سكر">سكر</option>
-              <option value="بطاطا">بطاطا</option>
-              <option value="دجاج">دجاج</option>
-            </select>
-          </div>
-
-          {/* Hotspots Only Checkbox */}
-          <label className="flex items-center gap-2 cursor-pointer bg-red-50 text-red-900 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
             <input
-              type="checkbox"
-              checked={onlyHotspots}
-              onChange={(e) => setOnlyHotspots(e.target.checked)}
-              className="w-3.5 h-3.5 text-red-600 rounded border-red-300 focus:ring-red-500"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث بالولاية، البلدية، اسم المحل، أو السلعة..."
+              className="w-full pl-3 pr-8 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:bg-white text-xs"
             />
-            <span>البؤر السوداء فقط</span>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -395,22 +765,24 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
         {/* Left Column: Interactive GIS Map Canvas (lg:col-span-8) */}
         <div className="lg:col-span-8 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-lg flex flex-col">
           {/* Map Controls Top Bar */}
-          <div className="bg-slate-950/80 px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
+          <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300">
             <div className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-white">الخارطة الجغرافية التفاعلية للتراب الوطني</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold text-white">
+                خريطة الجمهورية الجزائرية الديمقراطية الشعبية ({wilayas.length} ولاية مربوطة)
+              </span>
               <span className="text-[11px] text-slate-400 hidden sm:inline">
-                ({filteredReports.length} نقطة رصد مطابقة)
+                {territoryExtent === 'national_69' ? 'النطاق الكامل' : 'الشمال التجاري'}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Map Theme Toggle */}
+              {/* Theme Toggle */}
               <button
                 onClick={() => setMapTheme(mapTheme === 'tactical_dark' ? 'civic_light' : 'tactical_dark')}
                 className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono"
               >
-                {mapTheme === 'tactical_dark' ? 'عرض تكتيكي داكن' : 'عرض طبوغرافي نهاري'}
+                {mapTheme === 'tactical_dark' ? 'تكتيكي داكن' : 'نهاري طبوغرافي'}
               </button>
 
               {/* Pinpoint Mode */}
@@ -421,16 +793,16 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                     ? 'bg-red-600 text-white animate-pulse'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                 }`}
-                title="اضغط لتفعيل وضع النقر على الخريطة لتسجيل بلاغ بإحداثيات النقطة"
+                title="انقر على الخريطة لتسجيل بلاغ بإحداثيات النقطة"
               >
                 <Crosshair className="w-3.5 h-3.5" />
-                <span>{isPinModeActive ? 'انقر على الموقع بالخريطة' : 'تحديد موقع بالخريطة'}</span>
+                <span>{isPinModeActive ? 'انقر بالموقع' : 'تحديد بالخريطة'}</span>
               </button>
 
               {/* Zoom Controls */}
               <div className="flex items-center bg-slate-800 rounded-lg p-0.5">
                 <button
-                  onClick={() => setMapZoom((z) => Math.min(z + 0.25, 2.0))}
+                  onClick={() => setMapZoom((z) => Math.min(z + 0.25, 2.5))}
                   className="p-1 hover:bg-slate-700 rounded text-slate-300"
                   title="تكبير"
                 >
@@ -457,304 +829,602 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
             </div>
           </div>
 
-          {/* Interactive SVG / Canvas Map Viewport */}
+          {/* Interactive SVG Map Viewport */}
           <div
-            className={`relative w-full aspect-[16/9] min-h-[380px] overflow-hidden select-none ${
-              mapTheme === 'tactical_dark' ? 'bg-[#0b1320]' : 'bg-[#e2e8f0]'
+            className={`relative w-full aspect-[16/10] min-h-[440px] overflow-hidden select-none ${
+              mapTheme === 'tactical_dark' ? 'bg-[#090f1d]' : 'bg-[#e2e8f0]'
             } ${isPinModeActive ? 'cursor-crosshair' : 'cursor-default'}`}
           >
-            {/* Crosshair Banner when Pin Mode is Active */}
             {isPinModeActive && (
               <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-red-600 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg flex items-center gap-1.5 animate-bounce">
                 <Crosshair className="w-3.5 h-3.5" />
-                <span>انقر في أي مكان على الخريطة لتسجيل بلاغ بهذا الموقع الجغرافي</span>
+                <span>انقر في أي ولاية لتسجيل بلاغ ميداني جغرافي مباشر</span>
               </div>
             )}
 
             <svg
-              viewBox="0 0 800 440"
+              viewBox="0 0 900 520"
               className="w-full h-full transition-transform duration-300 origin-center"
               style={{ transform: `scale(${mapZoom})` }}
               onClick={handleMapCanvasClick}
             >
               <defs>
-                {/* Tactical Grid Pattern */}
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                {/* Tactical Coordinate Grid Pattern */}
+                <pattern id="tacticalGrid" width="45" height="45" patternUnits="userSpaceOnUse">
                   <path
-                    d="M 40 0 L 0 0 0 40"
+                    d="M 45 0 L 0 0 0 45"
                     fill="none"
-                    stroke={mapTheme === 'tactical_dark' ? '#1e293b' : '#cbd5e1'}
+                    stroke={mapTheme === 'tactical_dark' ? '#182438' : '#cbd5e1'}
                     strokeWidth="0.5"
                     strokeDasharray="2,2"
                   />
                 </pattern>
 
-                {/* Radar Pulse Animation Gradient for Black Spots */}
-                <radialGradient id="hotspotPulse">
-                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
-                  <stop offset="70%" stopColor="#ef4444" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                {/* Heatmap Gaussian Blur Filter */}
+                <filter id="heatBlur" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="14" result="blur" />
+                </filter>
+                <filter id="heatSoftBlur" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="8" result="blur" />
+                </filter>
+
+                {/* Speculation Heatmap Radial Gradients */}
+                <radialGradient id="heatCriticalRed">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.85" />
+                  <stop offset="45%" stopColor="#dc2626" stopOpacity="0.55" />
+                  <stop offset="75%" stopColor="#b91c1c" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#991b1b" stopOpacity="0" />
+                </radialGradient>
+
+                <radialGradient id="heatAlertAmber">
+                  <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
+                  <stop offset="50%" stopColor="#ea580c" stopOpacity="0.45" />
+                  <stop offset="80%" stopColor="#c2410c" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#9a3412" stopOpacity="0" />
+                </radialGradient>
+
+                <radialGradient id="heatModerateYellow">
+                  <stop offset="0%" stopColor="#eab308" stopOpacity="0.75" />
+                  <stop offset="55%" stopColor="#ca8a04" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#a16207" stopOpacity="0" />
+                </radialGradient>
+
+                {/* Availability Heatmap Radial Gradients */}
+                <radialGradient id="heatAbundantGreen">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.85" />
+                  <stop offset="45%" stopColor="#059669" stopOpacity="0.5" />
+                  <stop offset="80%" stopColor="#047857" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#065f46" stopOpacity="0" />
+                </radialGradient>
+
+                <radialGradient id="heatStableCyan">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.75" />
+                  <stop offset="55%" stopColor="#0891b2" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#0e7490" stopOpacity="0" />
+                </radialGradient>
+
+                <radialGradient id="heatScarcityAlert">
+                  <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.8" />
+                  <stop offset="55%" stopColor="#e11d48" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#be123c" stopOpacity="0" />
+                </radialGradient>
+
+                {/* Magro Hub Radiant Gradient */}
+                <radialGradient id="magroHubGlow">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.95" />
+                  <stop offset="40%" stopColor="#d97706" stopOpacity="0.5" />
+                  <stop offset="80%" stopColor="#b45309" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#78350f" stopOpacity="0" />
                 </radialGradient>
               </defs>
 
               {/* Grid Background */}
-              <rect width="800" height="440" fill="url(#grid)" />
+              <rect width="900" height="520" fill="url(#tacticalGrid)" />
 
-              {/* Stylized Mediterranean Coastline (North Algeria) */}
-              <path
-                d="M 30,70 Q 150,50 280,65 T 520,60 T 770,75 L 770,440 L 30,440 Z"
-                fill={mapTheme === 'tactical_dark' ? '#0f172a' : '#f1f5f9'}
-                stroke={mapTheme === 'tactical_dark' ? '#334155' : '#94a3b8'}
-                strokeWidth="1.5"
-              />
+              {/* Stylized Algeria Boundary Territory Polygon */}
+              {territoryExtent === 'national_69' ? (
+                /* Full National Algeria Contour */
+                <g>
+                  <path
+                    d="
+                      M 280,68 
+                      Q 350,56 460,60 
+                      T 640,62 
+                      T 780,68 
+                      L 805,145 
+                      L 820,245 
+                      L 845,340 
+                      L 745,450 
+                      L 615,488 
+                      L 480,470 
+                      L 380,420 
+                      L 220,380 
+                      L 85,275 
+                      L 175,175 
+                      Z
+                    "
+                    fill={mapTheme === 'tactical_dark' ? '#0f172a' : '#f8fafc'}
+                    stroke={mapTheme === 'tactical_dark' ? '#1e293b' : '#cbd5e1'}
+                    strokeWidth="1.8"
+                  />
+                  {/* Coastal Water Indicator */}
+                  <text
+                    x="530"
+                    y="38"
+                    textAnchor="middle"
+                    fill={mapTheme === 'tactical_dark' ? '#38bdf8' : '#0284c7'}
+                    fontSize="11"
+                    letterSpacing="3"
+                    fontWeight="bold"
+                    opacity="0.65"
+                  >
+                    البحر الأبيض المتوسط · MER MÉDITERRANÉE
+                  </text>
+                </g>
+              ) : (
+                /* Northern Urban Belt Contour */
+                <g>
+                  <path
+                    d="
+                      M 30,70 
+                      Q 200,45 420,55 
+                      T 740,55 
+                      T 880,70 
+                      L 880,480 
+                      L 30,480 
+                      Z
+                    "
+                    fill={mapTheme === 'tactical_dark' ? '#0f172a' : '#f8fafc'}
+                    stroke={mapTheme === 'tactical_dark' ? '#334155' : '#94a3b8'}
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x="450"
+                    y="32"
+                    textAnchor="middle"
+                    fill={mapTheme === 'tactical_dark' ? '#38bdf8' : '#0284c7'}
+                    fontSize="11"
+                    letterSpacing="3"
+                    fontWeight="bold"
+                    opacity="0.65"
+                  >
+                    الشريط الساحلي والمراكز التجارية الشمالية
+                  </text>
+                </g>
+              )}
 
-              {/* Mediterranean Sea Indicator */}
-              <text
-                x="400"
-                y="35"
-                textAnchor="middle"
-                fill={mapTheme === 'tactical_dark' ? '#38bdf8' : '#0284c7'}
-                fontSize="11"
-                letterSpacing="2"
-                fontWeight="bold"
-                opacity="0.6"
-              >
-                البحر الأبيض المتوسط · MER MÉDITERRANÉE
-              </text>
+              {/* Major Highway & Supply Corridors (الطريق السيار شرق-غرب ومحور الوحدة الإفريقية) */}
+              <g opacity="0.35" strokeDasharray="3,3">
+                {/* East-West Highway connecting Tlemcen, Oran, Algiers, Setif, Mila, Constantine, Annaba */}
+                <path
+                  d={`
+                    M ${projectCoords(34.88, -1.32).x},${projectCoords(34.88, -1.32).y}
+                    L ${projectCoords(35.70, -0.63).x},${projectCoords(35.70, -0.63).y}
+                    L ${projectCoords(36.16, 1.33).x},${projectCoords(36.16, 1.33).y}
+                    L ${projectCoords(36.75, 3.06).x},${projectCoords(36.75, 3.06).y}
+                    L ${projectCoords(36.19, 5.41).x},${projectCoords(36.19, 5.41).y}
+                    L ${projectCoords(36.25, 6.28).x},${projectCoords(36.25, 6.28).y}
+                    L ${projectCoords(36.36, 6.61).x},${projectCoords(36.36, 6.61).y}
+                    L ${projectCoords(36.90, 7.77).x},${projectCoords(36.90, 7.77).y}
+                  `}
+                  fill="none"
+                  stroke="#38bdf8"
+                  strokeWidth="1.4"
+                />
 
-              {/* Major Wilaya Boundaries & Landmark Dots */}
-              {MAP_LANDMARKS.map((lm) => {
-                const { x, y } = projectCoords(lm.lat, lm.lng);
-                const isSelected = selectedWilaya === lm.code;
+                {/* Trans-Sahara Highway connecting Algiers -> Djelfa -> Ghardaia -> In Salah -> Tamanrasset */}
+                <path
+                  d={`
+                    M ${projectCoords(36.75, 3.06).x},${projectCoords(36.75, 3.06).y}
+                    L ${projectCoords(34.67, 3.25).x},${projectCoords(34.67, 3.25).y}
+                    L ${projectCoords(32.49, 3.67).x},${projectCoords(32.49, 3.67).y}
+                    L ${projectCoords(27.20, 2.47).x},${projectCoords(27.20, 2.47).y}
+                    L ${projectCoords(22.79, 5.52).x},${projectCoords(22.79, 5.52).y}
+                  `}
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeWidth="1.2"
+                />
+              </g>
 
-                if (lm.isMagroHub) {
+              {/* ----------------------------------------------------------------- */}
+              {/* LAYER 1: Visual HEATMAP Halos for all 69 Wilayas */}
+              {/* ----------------------------------------------------------------- */}
+              {(activeLayer === 'speculation' || activeLayer === 'combined') && (
+                <g id="speculation-heatmap-layer">
+                  {Array.from(wilayaIntelligence.values()).map((item) => {
+                    const { x, y } = projectCoords(item.geo.lat, item.geo.lng);
+                    const isCritical = item.speculationLevel === 'critical';
+                    const isHigh = item.speculationLevel === 'high';
+                    const isModerate = item.speculationLevel === 'medium';
+
+                    // Radius scales with speculation index
+                    const baseRadius = isCritical ? 46 : isHigh ? 36 : isModerate ? 26 : 18;
+                    const gradientId = isCritical
+                      ? 'url(#heatCriticalRed)'
+                      : isHigh
+                      ? 'url(#heatAlertAmber)'
+                      : isModerate
+                      ? 'url(#heatModerateYellow)'
+                      : 'url(#heatAbundantGreen)';
+
+                    return (
+                      <g key={`heat-spec-${item.wilaya.code}`}>
+                        {/* Blur Halo */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={baseRadius}
+                          fill={gradientId}
+                          filter="url(#heatBlur)"
+                          opacity={isCritical ? 0.9 : 0.65}
+                          className={isCritical ? 'animate-pulse' : ''}
+                        />
+                        {/* Inner Heat Core */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={baseRadius * 0.55}
+                          fill={item.speculationColor}
+                          opacity={isCritical ? 0.35 : 0.15}
+                        />
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+
+              {/* ----------------------------------------------------------------- */}
+              {/* LAYER 2: Visual Commodity Availability Heatmap */}
+              {/* ----------------------------------------------------------------- */}
+              {(activeLayer === 'availability' || activeLayer === 'combined') && (
+                <g id="availability-heatmap-layer">
+                  {Array.from(wilayaIntelligence.values()).map((item) => {
+                    const { x, y } = projectCoords(item.geo.lat, item.geo.lng);
+                    const isOptimal = item.availabilityLevel === 'optimal';
+                    const isStable = item.availabilityLevel === 'stable';
+                    const isPressure = item.availabilityLevel === 'pressure';
+
+                    const baseRadius = isOptimal ? 42 : isStable ? 32 : isPressure ? 38 : 46;
+                    const gradientId = isOptimal
+                      ? 'url(#heatAbundantGreen)'
+                      : isStable
+                      ? 'url(#heatStableCyan)'
+                      : isPressure
+                      ? 'url(#heatAlertAmber)'
+                      : 'url(#heatScarcityAlert)';
+
+                    return (
+                      <g key={`heat-avail-${item.wilaya.code}`}>
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={baseRadius}
+                          fill={gradientId}
+                          filter="url(#heatSoftBlur)"
+                          opacity={0.7}
+                        />
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+
+              {/* ----------------------------------------------------------------- */}
+              {/* LAYER 3: 69 Wilayas Interactive Node Points & Badges */}
+              {/* ----------------------------------------------------------------- */}
+              <g id="wilaya-nodes-layer">
+                {Array.from(wilayaIntelligence.values()).map((item) => {
+                  const { x, y } = projectCoords(item.geo.lat, item.geo.lng);
+                  const isSelected = selectedWilaya === item.wilaya.code;
+                  const isHovered = hoveredWilayaCode === item.wilaya.code;
+                  const isMagroHub = item.geo.isMagroHub;
+
+                  if (isMagroHub) {
+                    return (
+                      <g
+                        key={`node-${item.wilaya.code}`}
+                        className="cursor-pointer group"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedWilaya(item.wilaya.code);
+                        }}
+                        onMouseEnter={() => setHoveredWilayaCode(item.wilaya.code)}
+                        onMouseLeave={() => setHoveredWilayaCode(null)}
+                      >
+                        {/* Radiant Halo for Magro Mila */}
+                        <circle cx={x} cy={y} r="28" fill="url(#magroHubGlow)" className="animate-ping origin-center opacity-60" />
+                        <circle cx={x} cy={y} r="14" fill="#065f46" stroke="#f59e0b" strokeWidth="2.5" />
+                        <text x={x} y={y + 4} textAnchor="middle" fontSize="11" className="pointer-events-none select-none">
+                          ⭐
+                        </text>
+                        {/* Floating Tooltip Label */}
+                        <rect
+                          x={x - 62}
+                          y={y - 28}
+                          width="124"
+                          height="18"
+                          rx="4"
+                          fill="#064e3b"
+                          stroke="#34d399"
+                          strokeWidth="1.2"
+                        />
+                        <text
+                          x={x}
+                          y={y - 15}
+                          textAnchor="middle"
+                          fill="#ffffff"
+                          fontSize="9"
+                          fontWeight="bold"
+                          className="pointer-events-none select-none"
+                        >
+                          ⭐ سوق ماڨرو العثمانية (ميلة 43)
+                        </text>
+                      </g>
+                    );
+                  }
+
+                  // Standard Wilaya Node (01..69)
+                  let nodeFill = '#64748b';
+                  if (activeLayer === 'speculation') {
+                    nodeFill = item.speculationColor;
+                  } else if (activeLayer === 'availability') {
+                    nodeFill = item.availabilityColor;
+                  }
+
                   return (
                     <g
-                      key={lm.code}
+                      key={`node-${item.wilaya.code}`}
                       className="cursor-pointer group"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedWilaya('43');
+                        setSelectedWilaya(item.wilaya.code);
                       }}
+                      onMouseEnter={() => setHoveredWilayaCode(item.wilaya.code)}
+                      onMouseLeave={() => setHoveredWilayaCode(null)}
                     >
-                      {/* Magro Pulsating Radar Halo */}
-                      <circle cx={x} cy={y} r="22" fill="#f59e0b" fillOpacity="0.25" className="animate-ping origin-center" />
-                      <circle cx={x} cy={y} r="12" fill="#065f46" stroke="#f59e0b" strokeWidth="2.5" />
-                      <text x={x} y={y + 3.5} textAnchor="middle" fontSize="10" className="pointer-events-none select-none">
-                        ⭐
-                      </text>
-                      <rect
-                        x={x - 56}
-                        y={y - 25}
-                        width="112"
-                        height="17"
-                        rx="4"
-                        fill="#064e3b"
-                        stroke="#34d399"
-                        strokeWidth="1.2"
-                      />
-                      <text
-                        x={x}
-                        y={y - 13}
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize="8.5"
-                        fontWeight="900"
-                        className="pointer-events-none select-none"
-                      >
-                        ⭐ سوق ماڨرو العثمانية 43
-                      </text>
-                    </g>
-                  );
-                }
+                      {/* Active / Hover Selection Ring */}
+                      {(isSelected || isHovered) && (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="12"
+                          fill="none"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                          strokeDasharray={isSelected ? 'none' : '2,2'}
+                          className="animate-pulse"
+                        />
+                      )}
 
-                return (
-                  <g
-                    key={lm.code}
-                    className="cursor-pointer group"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedWilaya(lm.code);
-                    }}
-                  >
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={isSelected ? 6 : 3.5}
-                      fill={isSelected ? '#10b981' : mapTheme === 'tactical_dark' ? '#64748b' : '#94a3b8'}
-                      stroke={mapTheme === 'tactical_dark' ? '#0f172a' : '#ffffff'}
-                      strokeWidth="1.5"
-                    />
-                    <text
-                      x={x}
-                      y={y - 8}
-                      textAnchor="middle"
-                      fill={isSelected ? '#34d399' : mapTheme === 'tactical_dark' ? '#94a3b8' : '#475569'}
-                      fontSize="9"
-                      fontWeight={isSelected ? 'bold' : 'normal'}
-                      className="pointer-events-none select-none transition-all group-hover:fill-emerald-400 group-hover:font-bold"
-                    >
-                      {lm.name}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Hotspot Radar Waves (Clusters with multiple violations) */}
-              {hotspots.map((hs) => {
-                const { x, y } = projectCoords(hs.lat, hs.lng);
-                const isBlackSpot = hs.hotspotRiskLevel === 'high_black_spot';
-                const isCurrentHotspot = selectedHotspot?.commune === hs.commune;
-
-                return (
-                  <g
-                    key={`hs-${hs.wilayaCode}-${hs.commune}`}
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedHotspot(hs);
-                    }}
-                  >
-                    {/* Animated Pulsating Wave */}
-                    <circle cx={x} cy={y} r="26" fill="url(#hotspotPulse)" className="animate-ping opacity-60 origin-center" />
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="16"
-                      fill={isBlackSpot ? '#ef4444' : '#f59e0b'}
-                      fillOpacity="0.25"
-                      stroke={isBlackSpot ? '#ef4444' : '#f59e0b'}
-                      strokeWidth="1.5"
-                      strokeDasharray={isBlackSpot ? 'none' : '3,2'}
-                    />
-
-                    {/* Hotspot Tag */}
-                    <rect
-                      x={x - 28}
-                      y={y + 12}
-                      width="56"
-                      height="15"
-                      rx="4"
-                      fill="#991b1b"
-                      stroke="#f87171"
-                      strokeWidth="0.8"
-                    />
-                    <text
-                      x={x}
-                      y={y + 23}
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      fontSize="8"
-                      fontWeight="bold"
-                    >
-                      بؤرة {hs.commune}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Individual Violation & Compliant Point Pins */}
-              {filteredReports.map((report) => {
-                const { x, y } = projectCoords(report.lat, report.lng);
-                const isSelected = selectedPoint?.id === report.id;
-
-                // Color coding according to violation severity
-                let pinColor = '#ef4444'; // Red = price ceiling
-                if (report.violationType === 'conditional_selling') pinColor = '#f59e0b'; // Amber
-                else if (report.violationType === 'hoarding_speculation') pinColor = '#a855f7'; // Purple
-                else if (report.violationType === 'no_price_display') pinColor = '#ea580c'; // Orange
-                else if (report.violationType === 'model_compliant_store') pinColor = '#10b981'; // Green
-
-                return (
-                  <g
-                    key={report.id}
-                    className="cursor-pointer transition-transform duration-150 hover:scale-125"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPoint(report);
-                      setSelectedHotspot(null);
-                    }}
-                  >
-                    {isSelected && (
                       <circle
                         cx={x}
                         cy={y}
-                        r="14"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2"
-                        className="animate-pulse"
+                        r={isSelected ? 6 : isHovered ? 5 : 3.5}
+                        fill={isSelected ? '#ffffff' : nodeFill}
+                        stroke={isSelected ? item.speculationColor : '#0f172a'}
+                        strokeWidth={isSelected ? 2.5 : 1}
                       />
-                    )}
 
-                    {/* Pin Shape */}
-                    <path
-                      d={`M ${x} ${y} L ${x - 5} ${y - 12} A 5 5 0 1 1 ${x + 5} ${y - 12} Z`}
-                      fill={pinColor}
-                      stroke="#ffffff"
-                      strokeWidth="1"
-                    />
+                      {/* Display Wilaya Code or Name on Hover / Selected or Important Centers */}
+                      {(isSelected || isHovered || isSelected || mapZoom > 1.25) && (
+                        <g className="pointer-events-none select-none">
+                          <rect
+                            x={x - 22}
+                            y={y - 19}
+                            width="44"
+                            height="13"
+                            rx="3"
+                            fill={isSelected ? '#059669' : '#0f172a'}
+                            stroke={isSelected ? '#34d399' : '#334155'}
+                            strokeWidth="0.8"
+                            opacity="0.95"
+                          />
+                          <text
+                            x={x}
+                            y={y - 9}
+                            textAnchor="middle"
+                            fill="#ffffff"
+                            fontSize="8"
+                            fontWeight="bold"
+                          >
+                            {item.wilaya.code} {item.wilaya.nameAr}
+                          </text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
 
-                    {/* Inner Pin Dot */}
-                    <circle cx={x} cy={y - 12} r="2" fill="#ffffff" />
-                  </g>
-                );
-              })}
+              {/* ----------------------------------------------------------------- */}
+              {/* LAYER 4: Hotspots Clusters (Radar Waves) */}
+              {/* ----------------------------------------------------------------- */}
+              {(activeLayer === 'speculation' || activeLayer === 'reports' || activeLayer === 'combined') && (
+                <g id="hotspots-layer">
+                  {hotspots.map((hs) => {
+                    const { x, y } = projectCoords(hs.lat, hs.lng);
+                    const isBlackSpot = hs.hotspotRiskLevel === 'high_black_spot';
+
+                    return (
+                      <g
+                        key={`hs-${hs.wilayaCode}-${hs.commune}`}
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedHotspot(hs);
+                        }}
+                      >
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="22"
+                          fill={isBlackSpot ? '#ef4444' : '#f59e0b'}
+                          fillOpacity="0.25"
+                          stroke={isBlackSpot ? '#ef4444' : '#f59e0b'}
+                          strokeWidth="1.5"
+                          className="animate-ping origin-center"
+                        />
+                        <rect
+                          x={x - 30}
+                          y={y + 10}
+                          width="60"
+                          height="15"
+                          rx="4"
+                          fill="#7f1d1d"
+                          stroke="#ef4444"
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          x={x}
+                          y={y + 21}
+                          textAnchor="middle"
+                          fill="#ffffff"
+                          fontSize="8"
+                          fontWeight="bold"
+                        >
+                          بؤرة {hs.commune}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+
+              {/* ----------------------------------------------------------------- */}
+              {/* LAYER 5: Live Field Pinpoints (Citizen Reports) */}
+              {/* ----------------------------------------------------------------- */}
+              {(activeLayer === 'reports' || activeLayer === 'combined') && (
+                <g id="reports-pins-layer">
+                  {filteredReports.map((report) => {
+                    const { x, y } = projectCoords(report.lat, report.lng);
+                    const isSelected = selectedPoint?.id === report.id;
+
+                    let pinColor = '#ef4444';
+                    if (report.violationType === 'conditional_selling') pinColor = '#f59e0b';
+                    else if (report.violationType === 'hoarding_speculation') pinColor = '#a855f7';
+                    else if (report.violationType === 'model_compliant_store') pinColor = '#10b981';
+
+                    return (
+                      <g
+                        key={report.id}
+                        className="cursor-pointer transition-transform duration-150 hover:scale-125"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPoint(report);
+                          setSelectedHotspot(null);
+                        }}
+                      >
+                        {isSelected && (
+                          <circle cx={x} cy={y} r="14" fill="none" stroke="#ffffff" strokeWidth="2" className="animate-pulse" />
+                        )}
+                        <path
+                          d={`M ${x} ${y} L ${x - 5} ${y - 12} A 5 5 0 1 1 ${x + 5} ${y - 12} Z`}
+                          fill={pinColor}
+                          stroke="#ffffff"
+                          strokeWidth="1"
+                        />
+                        <circle cx={x} cy={y - 12} r="2" fill="#ffffff" />
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
             </svg>
 
-            {/* Map Legend (Bottom Right Overlay) */}
-            <div className="absolute bottom-3 right-3 bg-slate-950/85 backdrop-blur-xs p-2.5 rounded-xl border border-slate-800 text-[10px] text-slate-300 space-y-1 z-10 shadow-lg">
-              <span className="font-bold text-white block text-[11px] mb-1">دليل الرموز الرقابية:</span>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
-                <span>خرق السعر المسقف (حليب 25 / زيت 650)</span>
+            {/* Tactical Map Dynamic Legend Overlay (Bottom Right) */}
+            <div className="absolute bottom-3 right-3 bg-slate-950/90 backdrop-blur-md p-3 rounded-xl border border-slate-800 text-[10px] text-slate-300 space-y-1.5 z-10 shadow-xl max-w-[240px]">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="font-bold text-white text-[11px] flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-emerald-400" />
+                  <span>دليل الخريطة اللحظي:</span>
+                </span>
+                <span className="font-mono text-emerald-400 text-[9px]">69 WILAYAS</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                <span>بيع مشروط غير قانوني (فرض سلع)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
-                <span>احتكار وتخزين غير مصرح (مضاربة)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                <span>نقطة بيع نموذجية منضبطة</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs">⭐</span>
-                <span className="text-amber-400 font-bold">قطب ماڨرو وادي العثمانية (ميلة 43)</span>
-              </div>
-              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800">
-                <span className="w-3.5 h-3.5 rounded-full border border-red-500 bg-red-500/30 shrink-0" />
-                <span className="text-red-400 font-semibold">بؤرة سوداء نشطة (تكرار المخالفات)</span>
+
+              {activeLayer === 'speculation' ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-red-500 shrink-0 shadow-sm shadow-red-500/50" />
+                    <span>بؤرة مضاربة حرجة (خرق سقف الأسعار)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
+                    <span>ضغط أسعار ونشاط مضاربة متوسط</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                    <span>سوق منضبط وأسعار نظامية مستقرة</span>
+                  </div>
+                </>
+              ) : activeLayer === 'availability' ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                    <span>وفرة عالية (&gt;80%) وتدفق سلع مستمر</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-cyan-500 shrink-0" />
+                    <span>وفرة طبيعية مستقرة (60-80%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
+                    <span>ضغط في وتيرة التوزيع (40-60%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-red-600 shrink-0" />
+                    <span>شح وتذبذب في التموين (&lt;40%)</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+                    <span>خرق السعر المسقف (حليب 25 / زيت 650)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                    <span>بيع مشروط غير قانوني</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span>نقطة بيع نموذجية منضبطة</span>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800 font-semibold text-amber-300">
+                <span>⭐</span>
+                <span>قطب ماڨرو وادي العثمانية (ميلة 43)</span>
               </div>
             </div>
           </div>
 
           {/* Tactical Inspection Patrols & Logistics Ticker */}
-          <div className="bg-slate-950/95 border-t border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs text-slate-300">
+          <div className="bg-slate-950 border-t border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs text-slate-300">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/90 text-red-400 border border-red-800/80 text-[10px] font-bold shrink-0">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                رادار قمع الغش والتموين
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-400 border border-emerald-800 text-[10px] font-bold shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                رادار التموين ومكافحة المضاربة
               </span>
               <span className="text-[11px] text-slate-200 truncate flex items-center gap-1.5">
-                <span className="font-bold text-amber-400">{PATROL_DISPATCHES[patrolIndex].icon} {PATROL_DISPATCHES[patrolIndex].type}:</span>
+                <span className="font-bold text-amber-400">
+                  {PATROL_DISPATCHES[patrolIndex].icon} {PATROL_DISPATCHES[patrolIndex].type}:
+                </span>
                 <span>{PATROL_DISPATCHES[patrolIndex].text}</span>
                 <span className="text-slate-400 font-mono text-[10px]">({PATROL_DISPATCHES[patrolIndex].time})</span>
               </span>
             </div>
-            <div className="text-[10px] text-emerald-400 font-mono font-semibold hidden sm:flex items-center gap-1 shrink-0">
+            <div className="text-[10px] text-emerald-400 font-mono font-bold hidden sm:flex items-center gap-1 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>تغطية 69 ولاية نشطة</span>
+              <span>نظام الـ 69 ولاية متصل 100%</span>
             </div>
           </div>
         </div>
 
         {/* Right Column: Active Inspection / Detail Sidebar (lg:col-span-4) */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Active Selection Detail Card */}
+          {/* Active Point Card (if clicked on individual violation) */}
           {selectedPoint ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3.5 animate-in fade-in duration-200">
               <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
@@ -764,13 +1434,12 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 </div>
                 <button
                   onClick={() => setSelectedPoint(null)}
-                  className="text-slate-400 hover:text-slate-600 text-xs px-1.5 py-0.5 rounded bg-slate-100"
+                  className="text-slate-400 hover:text-slate-600 text-xs px-2 py-0.5 rounded bg-slate-100"
                 >
                   إغلاق
                 </button>
               </div>
 
-              {/* Status and Severity Badges */}
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
@@ -792,15 +1461,8 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                     قيد التدقيق المجتمعي
                   </span>
                 )}
-
-                {selectedPoint.anonymous && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[10px]">
-                    مبلّغ مجهول
-                  </span>
-                )}
               </div>
 
-              {/* Price comparison box */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] text-slate-500 block">السعر الملاحظ:</span>
@@ -818,7 +1480,6 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 )}
               </div>
 
-              {/* Location and Store Info */}
               <div className="space-y-1.5 text-xs text-slate-700">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -830,32 +1491,8 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                     {selectedPoint.commune} · ولاية {selectedPoint.wilaya}
                   </span>
                 </div>
-                {selectedPoint.addressDetails && (
-                  <div className="text-slate-500 text-[11px] pr-5">
-                    {selectedPoint.addressDetails}
-                  </div>
-                )}
               </div>
 
-              {/* Evidence photo if present */}
-              {selectedPoint.evidencePhotoUrl && (
-                <div className="rounded-xl overflow-hidden border border-slate-200 h-28 bg-slate-100">
-                  <img
-                    src={selectedPoint.evidencePhotoUrl}
-                    alt="صورة توثيق المخالفة"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Notes */}
-              {selectedPoint.notes && (
-                <p className="p-2.5 bg-slate-50 rounded-lg text-slate-600 text-[11px] leading-relaxed border border-slate-100">
-                  "{selectedPoint.notes}"
-                </p>
-              )}
-
-              {/* Citizen confirmation button */}
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <div className="text-[11px] text-slate-500">
                   <span>التأكيدات الميدانية: </span>
@@ -867,10 +1504,10 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 <button
                   onClick={(e) => handleConfirm(selectedPoint.id, e)}
                   disabled={confirmingId === selectedPoint.id}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs transition-colors shadow-2xs flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs transition-colors shadow-xs flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>أنا أؤكد هذا البلاغ (+1)</span>
+                  <span>تأكيد البلاغ (+1)</span>
                 </button>
               </div>
             </div>
@@ -884,7 +1521,7 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                 </div>
                 <button
                   onClick={() => setSelectedHotspot(null)}
-                  className="text-red-700 hover:text-red-900 text-xs px-1.5 py-0.5 rounded bg-red-100"
+                  className="text-red-700 hover:text-red-900 text-xs px-2 py-0.5 rounded bg-red-100"
                 >
                   إغلاق
                 </button>
@@ -893,8 +1530,7 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
               <div className="space-y-2 text-xs text-red-950">
                 <p className="leading-relaxed">
                   تم رصد تكرار البلاغات وتضخيم الأسعار في هذه البلدية بواقع{' '}
-                  <span className="font-bold font-mono">{selectedHotspot.totalViolations} مخالفات</span>،
-                  منها {selectedHotspot.criticalCeilingViolations} خرق صريح للسعر المقنن.
+                  <span className="font-bold font-mono">{selectedHotspot.totalViolations} مخالفات</span>.
                 </p>
 
                 <div className="bg-white/80 p-3 rounded-xl border border-red-200 space-y-1">
@@ -906,148 +1542,220 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                     <span className="text-slate-500">الولاية:</span>
                     <span className="font-semibold text-slate-900">{selectedHotspot.wilayaName}</span>
                   </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">مستوى الخطورة:</span>
-                    <span className="font-bold text-red-700">بؤرة سوداء عالية الخطورة</span>
-                  </div>
                 </div>
 
                 <div className="pt-2">
                   <button
                     onClick={() => onOpenReportModalWithCoords({ lat: selectedHotspot.lat, lng: selectedHotspot.lng })}
-                    className="w-full py-2 bg-red-700 hover:bg-red-800 text-white font-semibold rounded-lg text-xs transition-colors shadow-2xs"
+                    className="w-full py-2 bg-red-700 hover:bg-red-800 text-white font-semibold rounded-xl text-xs transition-colors shadow-xs"
                   >
                     تسجيل بلاغ إضافي في هذه البؤرة
                   </button>
                 </div>
               </div>
             </div>
-          ) : selectedWilaya !== 'all' ? (
-            /* Selected Wilaya Intelligence Snapshot */
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3.5 animate-in fade-in duration-200">
+          ) : activeWilayaData ? (
+            /* Selected Wilaya Intelligence Snapshot (One of the 69 Wilayas) */
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 animate-in fade-in duration-200">
               <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold font-mono text-xs">
-                    {selectedWilaya}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center font-bold font-mono text-xs">
+                    {activeWilayaData.wilaya.code}
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm">
-                      رادار ولاية {wilayas.find((w) => w.code === selectedWilaya)?.nameAr || selectedWilaya}
+                      رادار ولاية {activeWilayaData.wilaya.nameAr}
                     </h3>
                     <span className="text-[10px] text-slate-500 font-mono">
-                      {wilayas.find((w) => w.code === selectedWilaya)?.nameFr}
+                      Wilaya de {activeWilayaData.wilaya.nameFr}
                     </span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setSelectedWilaya('all')}
-                  className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded bg-slate-100"
+                  className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded-lg bg-slate-100"
                 >
-                  الكل
+                  عرض الكل
                 </button>
               </div>
 
-              {selectedWilaya === '43' && (
-                <div className="p-3 bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-xl text-xs space-y-1.5 border border-emerald-700/50">
+              {/* Special Magro Mila 43 Spotlight Card */}
+              {activeWilayaData.wilaya.code === '43' && (
+                <div className="p-3.5 bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 text-white rounded-xl text-xs space-y-2 border border-emerald-700/60 shadow-xs">
                   <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                    <span>⭐</span>
-                    <span>قطب سوق ماڨرو وادي العثمانية (ميلة 43)</span>
+                    <span className="text-base">⭐</span>
+                    <span>قطب سوق الجملة الجهوي ماڨرو (وادي العثمانية - ميلة 43)</span>
                   </div>
                   <p className="text-[11px] text-emerald-100 leading-relaxed">
-                    البورصة الإقليمية الكبرى للخضر والفواكه بمحاذاة محول الطريق السيار شرق-غرب. تدفق يومي لآلاف أطنان البطاطا والطماطم والتفاح والتمور بأسعار الجملة ونصف الجملة.
+                    أكبر منصة لوجستية وبورصة خضر وفواكه بالشرق الجزائري بمحاذاة الطريق السيار شرق-غرب. تسليم مباشر لآلاف الأطنان من البطاطا، البصل، الفواكه بأسعار الجملة المرجعية التي تخفض التضخم وتكسر سلاسل الوساطة الطفيلية.
                   </p>
+                  <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-emerald-300 border-t border-emerald-800/80">
+                    <span>البطاطا بالجملة: 45 - 55 د.ج</span>
+                    <span>التدفق اليومي: +4500 طن</span>
+                  </div>
                 </div>
               )}
 
+              {/* Speculation Risk Gauge */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-800 flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5 text-red-500" />
+                    <span>مؤشر خطر المضاربة (Heat Risk):</span>
+                  </span>
+                  <span
+                    className="font-bold text-xs px-2 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: `${activeWilayaData.speculationColor}20`,
+                      color: activeWilayaData.speculationColor,
+                    }}
+                  >
+                    {activeWilayaData.speculationScore}% ({activeWilayaData.speculationLabelAr})
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${activeWilayaData.speculationScore}%`,
+                      backgroundColor: activeWilayaData.speculationColor,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Commodity Availability Status Grid */}
+              <div className="space-y-1.5">
+                <span className="font-bold text-slate-800 text-xs block">
+                  مصفوفة وفرة السلع الأساسية المقننة:
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {activeWilayaData.commodities.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="font-bold text-slate-800 flex items-center gap-1">
+                          <span>{item.icon}</span>
+                          <span className="truncate">{item.name}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-500">السعر:</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          {item.avgObservedPrice} د.ج
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded text-center truncate ${
+                          item.status === 'optimal'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : item.status === 'stable'
+                            ? 'bg-cyan-100 text-cyan-800'
+                            : item.status === 'pressure'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {item.statusAr}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Wilaya Stats Metrics */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-[10px] text-slate-500 block">مؤشر الأسعار:</span>
+                  <span className="text-[10px] text-slate-500 block">مؤشر الأسعار الإقليمي:</span>
                   <span className="font-mono text-sm font-bold text-slate-900">
-                    {wilayas.find((w) => w.code === selectedWilaya)?.priceIndex || 1.0}x
+                    {activeWilayaData.wilaya.priceIndex}x
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-[10px] text-slate-500 block">منافذ الرحمة النشطة:</span>
+                  <span className="text-[10px] text-slate-500 block">أسواق الرحمة النشطة:</span>
                   <span className="font-mono text-sm font-bold text-emerald-700">
-                    {wilayas.find((w) => w.code === selectedWilaya)?.activeRahmaMarkets || 6} منافذ
+                    {activeWilayaData.wilaya.activeRahmaMarkets} منافذ
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-[10px] text-slate-500 block">البلاغات المسجلة:</span>
+                  <span className="text-[10px] text-slate-500 block">البلاغات الميدانية:</span>
                   <span className="font-mono text-sm font-bold text-slate-900">
-                    {reports.filter((r) => r.wilayaCode === selectedWilaya).length} بلاغ
+                    {activeWilayaData.reportsCount} بلاغ
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   <span className="text-[10px] text-slate-500 block">البؤر تحت التفتيش:</span>
                   <span className="font-mono text-sm font-bold text-red-600">
-                    {hotspots.filter((h) => h.wilayaCode === selectedWilaya).length} بؤرة
+                    {activeWilayaData.hotspotsCount} بؤرة
                   </span>
                 </div>
               </div>
 
-              {wilayas.find((w) => w.code === selectedWilaya)?.popularMarkets && (
+              {/* Popular Markets in Wilaya */}
+              {activeWilayaData.wilaya.popularMarkets && (
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px]">
-                  <span className="font-bold text-slate-700 block mb-1">الأسواق الشعبية والجملة المعتمدة:</span>
-                  <span className="text-slate-600">
-                    {wilayas.find((w) => w.code === selectedWilaya)?.popularMarkets.join(' · ')}
+                  <span className="font-bold text-slate-700 block mb-1">الأسواق الشعبية وأسواق الجملة:</span>
+                  <span className="text-slate-600 leading-relaxed">
+                    {activeWilayaData.wilaya.popularMarkets.join(' · ')}
                   </span>
                 </div>
               )}
 
               <button
-                onClick={() => onOpenReportModalWithCoords()}
-                className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+                onClick={() => onOpenReportModalWithCoords({ lat: activeWilayaData.geo.lat, lng: activeWilayaData.geo.lng })}
+                className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>تسجيل بلاغ في ولاية {wilayas.find((w) => w.code === selectedWilaya)?.nameAr}</span>
+                <span>تسجيل بلاغ فوري في ولاية {activeWilayaData.wilaya.nameAr}</span>
               </button>
             </div>
           ) : (
-            /* Default Explanatory Panel */
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3.5">
+            /* Default Welcome & Instructions */
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3.5">
               <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>كيف يعمل نظام الرصد الميداني GIS؟</span>
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>تغطية نظام الـ 69 ولاية بالخريطة التفاعلية</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                اضغط على أي نقطة أو بؤرة حمراء على الخريطة لعرض تفاصيل التجاوز، صورة المخالفة الميدانية، واسم المحل.
+                انقر على أي ولاية من الولايات الـ 69 على الخريطة لعرض مؤشرات المضاربة، وفرة السلع المقننة (حليب، زيت، سميد، بطاطا ماڨرو)، وسجل الأسواق الشعبية.
               </p>
 
               <div className="space-y-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2">
                   <span className="w-5 h-5 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    1
+                    🔥
                   </span>
                   <div>
-                    <span className="font-bold text-slate-900 block">رصد وتوثيق المخالفة</span>
+                    <span className="font-bold text-slate-900 block">طبقة بؤر المضاربة</span>
                     <span className="text-[11px] text-slate-500">
-                      يسجل المواطن التجاوز بنقرة زر مع إحداثيات GPS ونوع السلعة وسعرها.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    2
-                  </span>
-                  <div>
-                    <span className="font-bold text-slate-900 block">التأكيد المجتمعي</span>
-                    <span className="text-[11px] text-slate-500">
-                      يؤكد مواطنو الحي البلاغ لرفع موثوقيته وتجنب أي بلاغات كيدية.
+                      توهج حراري أحمر وأصفر يحدد مناطق خرق سقف الأسعار والاحتكار.
                     </span>
                   </div>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2">
                   <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                    3
+                    🟢
                   </span>
                   <div>
-                    <span className="font-bold text-slate-900 block">إحالة فورية للرقابة</span>
+                    <span className="font-bold text-slate-900 block">طبقة وفرة السلع الأساسية</span>
                     <span className="text-[11px] text-slate-500">
-                      توجيه الإشعار لمفتشي التجارة وقمع الغش للنزول الميداني وتحرير المخالفات.
+                      توهج أخضر وسماوي يبرز تدفق ووفرة المواد الاستهلاكية وأقطاب الجملة.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    ⭐
+                  </span>
+                  <div>
+                    <span className="font-bold text-slate-900 block">قطب ماڨرو وادي العثمانية (ميلة 43)</span>
+                    <span className="text-[11px] text-slate-500">
+                      المرجع اللوجستي الإقليمي لضبط أسعار الخضر والفواكه.
                     </span>
                   </div>
                 </div>
@@ -1055,26 +1763,25 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
 
               <div className="pt-2">
                 <button
-                  onClick={() => onOpenReportModalWithCoords()}
-                  className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-xs transition-colors flex items-center justify-center gap-2"
+                  onClick={() => setSelectedWilaya('43')}
+                  className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>إرسال رصد أو بلاغ جديد</span>
+                  <span>⭐ معاينة بيانات قطب ماڨرو ميلة 43</span>
                 </button>
               </div>
             </div>
           )}
 
           {/* Active Hotspots Mini-List */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs">
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
             <div className="flex items-center justify-between mb-3">
               <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-red-600" />
-                <span>قائمة البؤر السوداء المرصودة ({hotspots.length})</span>
+                <span>قائمة البؤر المرصودة ({hotspots.length})</span>
               </span>
             </div>
 
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {hotspots.length === 0 ? (
                 <p className="text-[11px] text-slate-500 text-center py-4">
                   لا توجد بؤر مضاربة متكررة حالياً.
@@ -1092,7 +1799,7 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
                     <div>
                       <div className="font-semibold text-slate-900">{hs.commune}</div>
                       <div className="text-[10px] text-slate-500">
-                        {hs.wilayaName} · {hs.topViolatedCommodity}
+                        ولاية {hs.wilayaName} · {hs.topViolatedCommodity}
                       </div>
                     </div>
                     <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-mono text-[10px] font-bold">
@@ -1107,11 +1814,11 @@ export const GeoMapView: React.FC<GeoMapViewProps> = ({
       </div>
 
       {/* Citizen Live Reports Table & Feed */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-slate-900 text-sm">
-              سجل البلاغات الميدانية الحية وتحديثات الأسواق
+              سجل البلاغات الميدانية الحية وتحديثات الأسواق عبر 69 ولاية
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
               قائمة البلاغات المسجلة من المواطنين مع التوثيق الميداني وحالة التحقيق الرقابي

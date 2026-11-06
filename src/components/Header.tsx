@@ -9,6 +9,9 @@ interface HeaderProps {
   alertCount: number;
   onOpenReportModal: () => void;
   onOpenAlertsDrawer: () => void;
+  citizenPoints?: number;
+  citizenTier?: string;
+  onOpenProfileModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
   alertCount,
   onOpenReportModal,
   onOpenAlertsDrawer,
+  citizenPoints = 0,
+  citizenTier = 'مواطن راصد',
+  onOpenProfileModal,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
@@ -129,7 +135,31 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Zone 3: Actions, Alerts, and Basket */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Citizen Points & Profile Button */}
+            {onOpenProfileModal && (
+              <button
+                onClick={onOpenProfileModal}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-50 to-emerald-50 hover:from-amber-100 hover:to-emerald-100 text-slate-800 rounded-lg border border-amber-300/80 shadow-xs transition-all group cursor-pointer"
+                title="الملف الشخصي ورصيد مكافآت المواطن"
+              >
+                <div className="w-5 h-5 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center font-bold text-[11px] shadow-xs group-hover:rotate-12 transition-transform">
+                  ★
+                </div>
+                <div className="flex flex-col items-start leading-none">
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono font-black text-xs text-amber-900 tabular-nums">
+                      {citizenPoints}
+                    </span>
+                    <span className="text-[10px] text-amber-800 font-bold hidden sm:inline">نقطة</span>
+                  </div>
+                  <span className="text-[9px] text-slate-500 font-medium hidden md:inline truncate max-w-[70px]">
+                    {citizenTier}
+                  </span>
+                </div>
+              </button>
+            )}
+
             {/* Smart Market Alerts Bell */}
             <button
               onClick={onOpenAlertsDrawer}

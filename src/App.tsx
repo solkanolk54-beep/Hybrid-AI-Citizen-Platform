@@ -16,6 +16,9 @@ import {
   MarketAlert,
   GeoMapResponse,
   GeoReportPoint,
+  CitizenProfile,
+  CitizenPointsHistory,
+  CitizenRewardItem,
 } from './types/index.ts';
 import { Header } from './components/Header.tsx';
 import { HeroBanner } from './components/HeroBanner.tsx';
@@ -30,8 +33,117 @@ import { ReportModal } from './components/ReportModal.tsx';
 import { GeoReportModal } from './components/GeoReportModal.tsx';
 import { ProducerOfferModal } from './components/ProducerOfferModal.tsx';
 import { SmartAlertsDrawer } from './components/SmartAlertsDrawer.tsx';
+import { UserProfileModal } from './components/UserProfileModal.tsx';
 import { Footer } from './components/Footer.tsx';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+
+const CITIZEN_PROFILE_STORAGE_KEY = 'aesip_citizen_profile_v2';
+
+const DEFAULT_CITIZEN_PROFILE: CitizenProfile = {
+  id: 'cit-dz-user-1',
+  displayName: 'مواطن راصد',
+  wilayaCode: '16',
+  wilayaName: 'الجزائر العاصمة',
+  phoneOrAlias: 'هوية رقابية مشفرة',
+  totalPoints: 125,
+  tier: 'مواطن يقظ',
+  tierBadgeColor: 'border-emerald-300 text-emerald-800 bg-emerald-50',
+  nextTierPoints: 250,
+  stats: {
+    reportsSubmitted: 3,
+    violationsReported: 1,
+    verificationsConfirmed: 4,
+    receiptsScanned: 2,
+  },
+  availableRewards: [
+    {
+      id: 'rew-onab-300',
+      title: 'قسيمة تخفيض 300 د.ج لدى نقاط مجمع أوناب (ONAB)',
+      partner: 'الديوان الوطني لتغذية الأنعام (ONAB)',
+      discountValue: 'خصم 300 د.ج',
+      pointsCost: 100,
+      category: 'discount',
+      description: 'صالحة لشراء الدجاج الطازج المذبوح أو البيض من جميع نقاط البيع التابعة للمجمع.',
+      redeemed: false,
+      couponCode: 'ONAB-DZ-7419',
+    },
+    {
+      id: 'rew-rahma-500',
+      title: 'قسيمة تموين 500 د.ج بأسواق الرحمة والتضامن',
+      partner: 'أسواق الرحمة والتعاونيات الوطنية',
+      discountValue: 'خصم 500 د.ج',
+      pointsCost: 200,
+      category: 'discount',
+      description: 'تخفيض مباشر على قفة الخضر والمواد الأساسية في أسواق الرحمة المعتمدة بولايتك.',
+      redeemed: false,
+      couponCode: 'RAHMA-DZ-3891',
+    },
+    {
+      id: 'rew-sms-alerts',
+      title: 'اشتراك أولوية التنبيهات الفورية (SMS Alerts)',
+      partner: 'منصة المواطن الهجينة',
+      discountValue: 'خدمة مجانية',
+      pointsCost: 80,
+      category: 'sms_alerts',
+      description: 'استقبال رسائل تنبيه عاجلة فور توفر سلع نادرة أو أسعار استثنائية في بلديتك.',
+      redeemed: false,
+      couponCode: 'ALERTS-VIP-2026',
+    },
+    {
+      id: 'rew-trust-badge',
+      title: 'وسام المواطن الرقابي الموثوق (Trust Verification)',
+      partner: 'مديريات التجارة وقمع الغش',
+      discountValue: 'أولوية رقابية',
+      pointsCost: 250,
+      category: 'recognition',
+      description: 'منح بلاغاتك الميدانية أولوية التحقيق والتدخل الفوري من قبل فرق الرقابة وقمع الغش.',
+      redeemed: false,
+      couponCode: 'VERIFIED-CIT-01',
+    },
+  ],
+  pointsHistory: [
+    {
+      id: 'hist-init',
+      action: 'مكافأة الانضمام للمنصة',
+      points: 50,
+      description: 'هدية ترحيبية لتفعيل حساب الرقابة المجتمعية التشاركية.',
+      timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
+      type: 'market_update',
+    },
+    {
+      id: 'hist-rep-1',
+      action: 'رصد سعر مائدة محلي',
+      points: 25,
+      description: 'إرسال رصد ميداني لسعر البطاطا والزيت في دكان الحي.',
+      timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+      type: 'report_price',
+    },
+    {
+      id: 'hist-conf-1',
+      action: 'تأكيد بلاغ في بلدية الحراش',
+      points: 15,
+      description: 'تأكيد وجود البيع المشروط على الحليب والزيت لمساعدة الجيران.',
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+      type: 'confirm_report',
+    },
+    {
+      id: 'hist-geo-1',
+      action: 'رصد بؤرة تضخيم غير قانوني',
+      points: 50,
+      description: 'تسجيل بلاغ جغرافي موثق بإحداثيات GPS عن سقف سعر السميد.',
+      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+      type: 'report_violation',
+    },
+    {
+      id: 'hist-scan-1',
+      action: 'فحص فاتورة شراء بالذكاء الاصطناعي',
+      points: 20,
+      description: 'مسح تذكرة سوبرماركت واكتشاف زيادة في أسعار الطماطم المصبرة.',
+      timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+      type: 'scan_receipt',
+    },
+  ],
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('monitor');
@@ -53,6 +165,117 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Citizen Profile & Rewards Points System State
+  const [citizenProfile, setCitizenProfile] = useState<CitizenProfile>(() => {
+    try {
+      const saved = localStorage.getItem(CITIZEN_PROFILE_STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return DEFAULT_CITIZEN_PROFILE;
+  });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CITIZEN_PROFILE_STORAGE_KEY, JSON.stringify(citizenProfile));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [citizenProfile]);
+
+  const awardCitizenPoints = (
+    amount: number,
+    action: string,
+    type: CitizenPointsHistory['type'],
+    description: string
+  ) => {
+    setCitizenProfile((prev) => {
+      const newTotal = prev.totalPoints + amount;
+
+      let tier = prev.tier;
+      let badgeColor = prev.tierBadgeColor;
+      let nextTierPoints = prev.nextTierPoints;
+
+      if (newTotal >= 400) {
+        tier = 'حارس القدرة الشرائية';
+        badgeColor = 'border-purple-300 text-purple-800 bg-purple-50';
+        nextTierPoints = 1000;
+      } else if (newTotal >= 250) {
+        tier = 'مراقب مجتمعي متميز';
+        badgeColor = 'border-teal-300 text-teal-800 bg-teal-50';
+        nextTierPoints = 400;
+      } else if (newTotal >= 100) {
+        tier = 'مواطن يقظ';
+        badgeColor = 'border-emerald-300 text-emerald-800 bg-emerald-50';
+        nextTierPoints = 250;
+      }
+
+      const newHistoryItem: CitizenPointsHistory = {
+        id: `pts-${Date.now()}`,
+        action,
+        points: amount,
+        description,
+        timestamp: new Date().toISOString(),
+        type,
+      };
+
+      const newStats = { ...prev.stats };
+      if (type === 'report_price') newStats.reportsSubmitted += 1;
+      if (type === 'report_violation') newStats.violationsReported += 1;
+      if (type === 'confirm_report') newStats.verificationsConfirmed += 1;
+      if (type === 'scan_receipt') newStats.receiptsScanned += 1;
+
+      return {
+        ...prev,
+        totalPoints: newTotal,
+        tier,
+        tierBadgeColor: badgeColor,
+        nextTierPoints,
+        pointsHistory: [newHistoryItem, ...prev.pointsHistory],
+        stats: newStats,
+      };
+    });
+
+    showToast(`🎉 مكافأة المواطن: تم إضافة +${amount} نقطة لرصيدك! (${action})`);
+  };
+
+  const handleRedeemReward = (rewardId: string) => {
+    setCitizenProfile((prev) => {
+      const reward = prev.availableRewards.find((r) => r.id === rewardId);
+      if (!reward || prev.totalPoints < reward.pointsCost || reward.redeemed) return prev;
+
+      const updatedRewards = prev.availableRewards.map((r) =>
+        r.id === rewardId ? { ...r, redeemed: true } : r
+      );
+
+      const historyItem: CitizenPointsHistory = {
+        id: `pts-redeem-${Date.now()}`,
+        action: `استبدال مكافأة: ${reward.title}`,
+        points: -reward.pointsCost,
+        description: `تم توليد رمز القسيمة بنجاح (${reward.couponCode || 'PROMO-DZ'})`,
+        timestamp: new Date().toISOString(),
+        type: 'market_update',
+      };
+
+      return {
+        ...prev,
+        totalPoints: prev.totalPoints - reward.pointsCost,
+        availableRewards: updatedRewards,
+        pointsHistory: [historyItem, ...prev.pointsHistory],
+      };
+    });
+    showToast('🎉 تهانينا! تم استبدال المكافأة وتفعيل قسيمتك بنجاح!');
+  };
+
+  const handleUpdateProfile = (updated: Partial<CitizenProfile>) => {
+    setCitizenProfile((prev) => ({ ...prev, ...updated }));
+    showToast('تم تحديث بيانات الملف الشخصي بنجاح.');
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -131,6 +354,23 @@ export default function App() {
     showToast('تم إفراغ قفة التموين.');
   };
 
+  const handleLoadSampleBasket = () => {
+    if (products.length > 0) {
+      const sampleIds = ['oil-5l', 'chicken-fresh', 'potato-white', 'milk-bag', 'semolina-10kg'];
+      const picked = products.filter((p) => sampleIds.includes(p.id));
+      if (picked.length > 0) {
+        setCustomBasket(
+          picked.map((p) => ({
+            product: p,
+            quantity: p.id === 'milk-bag' ? 4 : p.id === 'potato-white' ? 5 : 1,
+          }))
+        );
+        showToast('تم شحن قفة أسبوعية نموذجية بنجاح!');
+        return;
+      }
+    }
+  };
+
   const handleOpenAdvisorWithQuery = (query: string) => {
     setAdvisorInitialQuery(query);
     setActiveTab('advisor');
@@ -169,6 +409,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         showToast(data.message || 'تم تسجيل تأكيدك بنجاح وتعزيز المراقبة المجتمعية!');
+        awardCitizenPoints(15, 'تأكيد صحة بلاغ ميداني', 'confirm_report', 'المساهمة في التحقق المجتمعي لردع المضاربة بالحي.');
         // Update local state optimistically
         setGeoData((prev) => {
           if (!prev) return null;
@@ -185,6 +426,7 @@ export default function App() {
 
   const handleGeoReportSubmitted = (newReport: GeoReportPoint, triggeredAlert?: MarketAlert | null) => {
     showToast(`تم تسجيل البلاغ الجغرافي عن "${newReport.productName}" بنجاح.`);
+    awardCitizenPoints(50, 'بلاغ جغرافي عن تجاوزات', 'report_violation', `رصد مخالفة لـ ${newReport.productName} في بلدية ${newReport.commune}`);
     if (triggeredAlert) {
       setAlerts((prev) => [triggeredAlert, ...prev]);
       showToast(`⚠️ تنبيه رقابي عاجل: تم رصد بؤرة تجاوزات جديدة في بلدية ${newReport.commune}!`);
@@ -239,6 +481,9 @@ export default function App() {
         alertCount={alerts.length}
         onOpenReportModal={() => setIsReportModalOpen(true)}
         onOpenAlertsDrawer={() => setIsAlertsDrawerOpen(true)}
+        citizenPoints={citizenProfile.totalPoints}
+        citizenTier={citizenProfile.tier}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
       />
 
       <main className="flex-1">
@@ -273,6 +518,7 @@ export default function App() {
           <GeoMapView
             geoData={geoData}
             wilayas={wilayas}
+            products={products}
             selectedWilaya={selectedWilaya}
             setSelectedWilaya={setSelectedWilaya}
             onOpenReportModalWithCoords={handleOpenGeoReportModal}
@@ -296,6 +542,14 @@ export default function App() {
             onOpenReportModalWithItem={(name, price) => {
               handleOpenGeoReportModal();
             }}
+            onReceiptScanned={(res) => {
+              awardCitizenPoints(
+                20,
+                'فحص وتحليل تذكرة شراء (AI OCR)',
+                'scan_receipt',
+                `تحليل فاتورة لمتجر "${res.storeName || 'تجزئة'}" وكشف الأسعار.`
+              );
+            }}
           />
         )}
 
@@ -306,6 +560,10 @@ export default function App() {
             setSelectedWilaya={setSelectedWilaya}
             onAddToBasket={handleAddToBasket}
             initialQuery={advisorInitialQuery}
+            customBasket={customBasket}
+            onRemoveFromBasket={handleRemoveFromBasket}
+            onClearBasket={handleClearBasket}
+            onLoadSampleBasket={handleLoadSampleBasket}
           />
         )}
 
@@ -333,7 +591,10 @@ export default function App() {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         wilayas={wilayas}
-        onReportSubmitted={handleRefreshReports}
+        onReportSubmitted={() => {
+          handleRefreshReports();
+          awardCitizenPoints(25, 'رصد سعر سلعة في السوق', 'report_price', 'تحديث بيانات السوق الميدانية.');
+        }}
       />
 
       {/* GIS Geo-Mapping Enforcement Report Modal */}
@@ -350,7 +611,20 @@ export default function App() {
         isOpen={isProducerModalOpen}
         onClose={() => setIsProducerModalOpen(false)}
         wilayas={wilayas}
-        onOfferSubmitted={handleRefreshOffers}
+        onOfferSubmitted={() => {
+          handleRefreshOffers();
+          awardCitizenPoints(30, 'تسجيل منتج محلي مباشر', 'producer_offer', 'دعم تسويق المنتوجات الفلاحية مباشرة للمواطن.');
+        }}
+      />
+
+      {/* Citizen Profile & Rewards Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        profile={citizenProfile}
+        wilayas={wilayas}
+        onUpdateProfile={handleUpdateProfile}
+        onRedeemReward={handleRedeemReward}
       />
 
       {/* Smart Market Alerts Drawer */}

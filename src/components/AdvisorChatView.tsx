@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { WilayaData, ProductItem, DEFAULT_WILAYAS } from '../types/index.ts';
+import { WilayaData, ProductItem, DEFAULT_WILAYAS, BasketItem } from '../types/index.ts';
 import { Sparkles, Send, MapPin, Users, Coins, HelpCircle, Plus, Check, LineChart, ChevronDown, ChevronUp } from 'lucide-react';
 import { PriceTrendsD3Chart } from './PriceTrendsD3Chart.tsx';
+import { BasketConsumptionAdvisorCard } from './BasketConsumptionAdvisorCard.tsx';
 
 interface ChatMessage {
   id: string;
@@ -18,6 +19,10 @@ interface AdvisorChatViewProps {
   setSelectedWilaya: (code: string) => void;
   onAddToBasket: (product: ProductItem) => void;
   initialQuery?: string;
+  customBasket?: BasketItem[];
+  onRemoveFromBasket?: (productId: string) => void;
+  onClearBasket?: () => void;
+  onLoadSampleBasket?: () => void;
 }
 
 export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
@@ -26,6 +31,10 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
   setSelectedWilaya,
   onAddToBasket,
   initialQuery = '',
+  customBasket = [],
+  onRemoveFromBasket,
+  onClearBasket,
+  onLoadSampleBasket,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -54,7 +63,10 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
   const currentWilaya = activeWilayas.find((w) => w.code === selectedWilaya) || activeWilayas[0];
 
   const quickPrompts = [
-    `عندي ميزانية 4000 د.ج، كيف نوزع قفة أسبوع لعائلة من 4 أفراد في ${currentWilaya.nameAr}؟`,
+    ...(customBasket.length > 0
+      ? [`حلل لي قفة التموين (${customBasket.length} مواد) واقترح بدائل وطنية أوفر لترشيد المصاريف في ${currentWilaya.nameAr}`]
+      : []),
+    `عندي ميزانية ${budget || '4000'} د.ج، كيف نوزع قفة أسبوع لعائلة من ${familySize} أفراد في ${currentWilaya.nameAr}؟`,
     `أين أجد نقاط بيع الدواجن (ONAB) والبقوليات (OAIC) وأسواق الرحمة في ${currentWilaya.nameAr}؟`,
     `ما هي المواد المسقفة قانونياً في الجزائر وما هي أسعارها المحددة؟`,
     `ما هي أفضل بدائل اللحوم الحمراء الأوفر بالدينار الجزائري؟`,
@@ -87,6 +99,7 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
           wilaya: currentWilaya.nameAr,
           familySize: familySize,
           budget: budget ? Number(budget) : undefined,
+          customBasket: customBasket,
         }),
       });
 
@@ -198,6 +211,20 @@ export const AdvisorChatView: React.FC<AdvisorChatViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Personalized Basket Consumption Advisor Card - نصائح استهلاك شخصية لقفة التموين */}
+      <BasketConsumptionAdvisorCard
+        customBasket={customBasket}
+        selectedWilayaName={currentWilaya.nameAr}
+        popularMarket={currentWilaya.popularMarkets?.[0] || 'سوق الرحمة المركزي'}
+        familySize={familySize}
+        budget={budget}
+        onAskAdvisorAboutBasket={(query) => handleSend(query)}
+        onRemoveFromBasket={onRemoveFromBasket}
+        onClearBasket={onClearBasket}
+        onLoadSampleBasket={onLoadSampleBasket}
+        onAddToBasket={onAddToBasket}
+      />
 
       {/* D3.js Price Trends Section - قسم الرسوم البيانية لاتجاهات الأسعار */}
       <div className="mb-6">

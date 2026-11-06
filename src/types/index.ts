@@ -290,3 +290,45 @@ export const DEFAULT_WILAYAS: WilayaData[] = [
   { code: '68', nameAr: 'الأربعاء', nameFr: 'Larbaâ', priceIndex: 0.99, activeRahmaMarkets: 6, popularMarkets: ['سوق الأربعاء للخضر والفواكه', 'سوق سيدي موسى المجاور'] },
   { code: '69', nameAr: 'بئر العاتر', nameFr: 'Bir El Ater', priceIndex: 1.02, activeRahmaMarkets: 4, popularMarkets: ['سوق بئر العاتر التجاري التمويني', 'سوق الفوسفات'] },
 ];
+
+export interface CitizenPointsHistory {
+  id: string;
+  action: string;
+  points: number;
+  description: string;
+  timestamp: string;
+  type: 'report_price' | 'report_violation' | 'confirm_report' | 'scan_receipt' | 'producer_offer' | 'market_update';
+}
+
+export interface CitizenRewardItem {
+  id: string;
+  title: string;
+  partner: string;
+  discountValue: string;
+  pointsCost: number;
+  category: 'discount' | 'badge' | 'sms_alerts' | 'recognition';
+  description: string;
+  redeemed: boolean;
+  couponCode?: string;
+}
+
+export interface CitizenProfile {
+  id: string;
+  displayName: string;
+  wilayaCode: string;
+  wilayaName: string;
+  phoneOrAlias: string;
+  totalPoints: number;
+  tier: 'مواطن راصد' | 'مواطن يقظ' | 'مراقب مجتمعي متميز' | 'حارس القدرة الشرائية';
+  tierBadgeColor: string;
+  nextTierPoints: number;
+  pointsHistory: CitizenPointsHistory[];
+  stats: {
+    reportsSubmitted: number;
+    violationsReported: number;
+    verificationsConfirmed: number;
+    receiptsScanned: number;
+  };
+  availableRewards: CitizenRewardItem[];
+}
+

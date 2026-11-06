@@ -148,6 +148,27 @@ aiServiceRouter.get('/stats', (_req: Request, res: Response) => {
   });
 });
 
+/**
+ * Get available citizen rewards catalog and gamification rules
+ */
+aiServiceRouter.get('/rewards-catalog', (_req: Request, res: Response) => {
+  res.json({
+    rules: {
+      reportViolation: 50,
+      reportPrice: 25,
+      scanReceipt: 20,
+      confirmReport: 15,
+      producerOffer: 30,
+    },
+    tiers: [
+      { name: 'مواطن راصد', minPoints: 0, badge: 'برونزي' },
+      { name: 'مواطن يقظ', minPoints: 100, badge: 'فضي' },
+      { name: 'مراقب مجتمعي متميز', minPoints: 250, badge: 'ذهبي' },
+      { name: 'حارس القدرة الشرائية', minPoints: 400, badge: 'بلاتيني' },
+    ],
+  });
+});
+
 // =====================================================================
 // 1. تفعيل حزمة المنتج المحلي (Farm-to-Consumer Direct Offers API)
 // =====================================================================
@@ -585,7 +606,7 @@ ${rawText ? `نص الفاتورة المدخل: \n${rawText}` : ''}
  */
 aiServiceRouter.post('/advisor', async (req: Request, res: Response) => {
   try {
-    const { question, wilaya, familySize, budget } = req.body;
+    const { question, wilaya, familySize, budget, customBasket } = req.body;
 
     if (!question || typeof question !== 'string' || !question.trim()) {
       return res.status(400).json({ error: 'يرجى كتابة استفسارك أو طلب التوجيه الاستهلاكي.' });
@@ -593,6 +614,40 @@ aiServiceRouter.post('/advisor', async (req: Request, res: Response) => {
 
     const selectedWilaya =
       ALGERIAN_WILAYAS.find((w) => w.nameAr === wilaya || w.code === wilaya) || ALGERIAN_WILAYAS[0];
+
+    const basketItems = Array.isArray(customBasket) ? customBasket : [];
+    let basketContextText = '';
+    let basketTotalRetail = 0;
+    let basketTotalRahma = 0;
+
+    if (basketItems.length > 0) {
+      const itemsFormatted = basketItems.map((b: any, i: number) => {
+        const prod = b.product || {};
+        const q = Number(b.quantity) || 1;
+        const retail = (Number(prod.averageRetailPrice) || 0) * q;
+        const rahma = (Number(prod.rahmaMarketPrice) || Number(prod.averageRetailPrice) || 0) * q;
+        basketTotalRetail += retail;
+        basketTotalRahma += rahma;
+
+        const ceilingStr = prod.priceCeiling ? ` (سعر مسقف رسمياً: ${prod.priceCeiling} د.ج)` : '';
+        const altStr = prod.alternatives && prod.alternatives.length > 0
+          ? ` -> البديل الأوفر: ${prod.alternatives[0].name} بسعر ${prod.alternatives[0].price} د.ج (توفير ${prod.alternatives[0].savingDzd} د.ج)`
+          : '';
+
+        return `${i + 1}. ${prod.name} (${q} ${prod.unit || 'وحدة'}) - تكلفة التجزئة: ${retail} د.ج | في أسواق الرحمة: ${rahma} د.ج${ceilingStr}${altStr}`;
+      }).join('\n');
+
+      const potentialSavings = Math.max(0, basketTotalRetail - basketTotalRahma);
+      const savingsPct = basketTotalRetail > 0 ? Math.round((potentialSavings / basketTotalRetail) * 100) : 0;
+
+      basketContextText = `
+بيانات قفة التموين الحالية الخاصة بالمواطن (${basketItems.length} مواد):
+${itemsFormatted}
+إجمالي تكلفة القفة في محلات التجزئة العادية: ${basketTotalRetail} د.ج
+إجمالي تكلفة القفة في أسواق الرحمة والتعاونيات: ${basketTotalRahma} د.ج
+مبلغ التوفير المحقق عند الشراء من المنافذ التضامنية: ${potentialSavings} د.ج (${savingsPct}%)
+`;
+    }
 
     const productsContext = INITIAL_PRODUCTS.map((p) => {
       const altText = p.alternatives
@@ -607,27 +662,29 @@ aiServiceRouter.post('/advisor', async (req: Request, res: Response) => {
     if (aiClient) {
       try {
         const systemInstruction = `أنت "مستشار المواطن الهجين الذكي" في الجزائر، منصة وطنية تقدم استشارات مباشرة وسريعة للمواطنين لمساعدتهم على تدبير ميزانية الأسرة بالدينار الجزائري (DZD)، ورصد ومقارنة أسعار المواد التموينية والغذائية، واقتراح البدائل الوطنية الأوفر، وتفادي الغلاء والاحتكار.
-تحدث بلهجة محترمة، ودودة ومباشرة تناسب المواطن الجزائري (مع استخدام المصطلحات الدارجة والمألوفة كـ: قفة، أسواق الرحمة، نقاط بيع أغروديف وأوناب ONAB، تعاونية الحبوب OAIC، سوبرات، كيس الحليب 25دج، الزيت المسقف، التوفير، د.ج).
+تحدث بلهجة محترمة، ودودة ومباشرة تناسب المواطن الجزائري (مع استخدام المصطلحات الدارجة والمألوفة كـ: قفة، قفة التموين، أسواق الرحمة، نقاط بيع أغروديف وأوناب ONAB، تعاونية الحبوب OAIC، سوبرات، كيس الحليب 25دج، الزيت المسقف، التوفير، د.ج).
 قواعد تقديم المشورة:
 1. اذكر دائماً الأسعار بالدينار الجزائري (د.ج).
-2. وضح بدائل واضحة ومقدار التوفير (مثلاً: اقتراح الدجاج أو السردين بدلاً من اللحم الأحمر، أو شراء البقوليات من نقاط OAIC بنصف التكلفة).
-3. ركّز على نقاط الشراء الأوفر في الولاية المختارة (${selectedWilaya.nameAr} - أسواقها الشعبية المعروفة مثل: ${selectedWilaya.popularMarkets.join('، ')}).
-4. قدم النصائح في نقاط محددة وسهلة التطبيق مباشرة.`;
+2. إذا كانت هناك "قفة تموين" مدخلة للمواطن، ركز استشارتك بعمق وتفصيل على محتويات قفته الخاصة، وحدد له البدائل المباشرة لكل سلعة مرتفعة في قفته وطرق تقليل هدرها.
+3. وضح بدائل واضحة ومقدار التوفير (مثلاً: اقتراح الدجاج أو السردين بدلاً من اللحم الأحمر، أو شراء البقوليات من نقاط OAIC بنصف التكلفة).
+4. ركّز على نقاط الشراء الأوفر في الولاية المختارة (${selectedWilaya.nameAr} - أسواقها الشعبية المعروفة مثل: ${selectedWilaya.popularMarkets.join('، ')}).
+5. قدم النصائح في نقاط محددة وسهلة التطبيق مباشرة.`;
 
         const prompt = `طلب المواطن: "${question}"
 معلومات السياق:
 الولاية: ${selectedWilaya.nameAr} (مؤشر الأسعار: ${selectedWilaya.priceIndex})
 عدد أفراد الأسرة المقدر: ${familySize || 'غير محدد'}
 الميزانية المتاحة: ${budget ? budget + ' د.ج' : 'غير محددة'}
+${basketContextText}
 
 بيانات أسعار السلع والبدائل المحلية المعتمدة في النظام:
 ${productsContext}
 
 يرجى إعطاء إجابة استشارية منظمة وعملية للمواطن الجزائري، تتضمن:
-1. توصية تسوق مباشرة ومحددة.
+1. توصية تسوق مباشرة ومحددة ${basketItems.length > 0 ? 'مبنية خصيصاً على السلع الموجودة في قفة تموينه' : ''}.
 2. جدول بدائل موفرة ومقارنة الأسعار بالدينار.
 3. نقاط الشراء المقترحة في ${selectedWilaya.nameAr}.
-4. نصيحة ذهبية لترشيد الاستهلاك اليومي.`;
+4. نصائح ذهبية لترشيد الاستهلاك اليومي وتوفير النفقات.`;
 
         const response = await aiClient.models.generateContent({
           model: 'gemini-3.8-flash',
@@ -645,7 +702,7 @@ ${productsContext}
     }
 
     if (!aiAdviceText) {
-      aiAdviceText = generateHeuristicAdvice(question, selectedWilaya, familySize, budget);
+      aiAdviceText = generateHeuristicAdvice(question, selectedWilaya, familySize, budget, basketItems);
     }
 
     const qLower = question.toLowerCase();
@@ -661,6 +718,13 @@ ${productsContext}
       aiAdviceText,
       source: aiClient ? 'hybrid_gemini_flash' : 'local_heuristic_engine',
       relatedProducts,
+      basketSummary: basketItems.length > 0 ? {
+        itemCount: basketItems.length,
+        totalRetailDzd: basketTotalRetail,
+        totalRahmaDzd: basketTotalRahma,
+        potentialSavingsDzd: Math.max(0, basketTotalRetail - basketTotalRahma),
+        savingsPercent: basketTotalRetail > 0 ? Math.round(((basketTotalRetail - basketTotalRahma) / basketTotalRetail) * 100) : 0,
+      } : null,
       timestamp: new Date().toISOString(),
     });
   } catch (error: unknown) {
@@ -1228,10 +1292,81 @@ aiServiceRouter.post('/reports/geo-map/:id/confirm', (req: Request, res: Respons
 /**
  * Local Algerian Market Heuristic Advisor (Zero-latency fallback)
  */
-function generateHeuristicAdvice(question: string, wilaya: WilayaData, familySize?: number, budget?: number): string {
+function generateHeuristicAdvice(
+  question: string,
+  wilaya: WilayaData,
+  familySize?: number,
+  budget?: number,
+  basketItems?: any[]
+): string {
   const q = question.toLowerCase();
   const wilayaName = wilaya.nameAr;
   const popularMarket = wilaya.popularMarkets[0] || 'سوق الجملة / الرحمة';
+
+  // If basketItems are provided, provide personalized consumption and cost-saving advice
+  if (basketItems && basketItems.length > 0) {
+    let totalRetail = 0;
+    let totalRahma = 0;
+    const itemsLines: string[] = [];
+    const tipsList: string[] = [];
+
+    basketItems.forEach((b: any) => {
+      const p = b.product || {};
+      const qty = Number(b.quantity) || 1;
+      const retail = (Number(p.averageRetailPrice) || 0) * qty;
+      const rahma = (Number(p.rahmaMarketPrice) || Number(p.averageRetailPrice) || 0) * qty;
+      totalRetail += retail;
+      totalRahma += rahma;
+
+      const ceilingNote = p.priceCeiling ? ` (مسقف: ${p.priceCeiling} د.ج)` : '';
+      const alt = p.alternatives && p.alternatives.length > 0 ? p.alternatives[0] : null;
+      const altNote = alt ? ` -> [البديل الأوفر: ${alt.name} يوفر ${alt.savingDzd} د.ج]` : '';
+
+      itemsLines.push(`• **${p.name}** (${qty} ${p.unit || ''}): التجزئة ${retail} د.ج | في الرحمة ${rahma} د.ج${ceilingNote}${altNote}`);
+
+      // Specific consumption tip per category or product name
+      const pName = (p.name || '').toLowerCase();
+      if (pName.includes('زيت') && !tipsList.some((t) => t.includes('الزيت'))) {
+        tipsList.push('💡 **ترشيد استهلاك الزيت**: استخدم بخاخ الزيت أو طهي الفرن، وتجنب القلي العميق المتكرر لزيادة مدة كفاية الـ 5 لتر بنسبة 30%.');
+      } else if (pName.includes('دجاج') && !tipsList.some((t) => t.includes('الدجاج'))) {
+        tipsList.push('💡 **توفير الدواجن**: اقتنِ الدجاج الطازج من نقاط مجمع أوناب (ONAB) بسعر 360-380 د.ج، وشراء الدجاجة كاملة وتقطيعها منزلياً يوفر 35% مقارنة بالقطع المنفصلة.');
+      } else if ((pName.includes('لحم') || pName.includes('بقر')) && !tipsList.some((t) => t.includes('اللحوم'))) {
+        tipsList.push('💡 **بديل اللحوم الحمراء**: استبدال وجبتين أسبوعياً بلحم الدواجن أو سردين الموانئ أو أطباق البقوليات (العدس/اللوبيا) يوفر أكثر من 1800 د.ج أسبوعياً.');
+      } else if (pName.includes('سميد') && !tipsList.some((t) => t.includes('السميد'))) {
+        tipsList.push('💡 **السميد والمخبوزات**: اقتنِ أكياس 10 كغ أو 25 كغ من نقاط مجمع أغروديف (Agrodive) بسعر 450 د.ج للكيس لخفض كلفة الخبز المنزلي.');
+      } else if (pName.includes('حليب') && !tipsList.some((t) => t.includes('الحليب'))) {
+        tipsList.push('💡 **الحليب ومشتقاته**: التزم بسعر كيس الحليب المدعم 25 د.ج، وعند النقص اختر بودرة الحليب المحلية بدلاً من عبوات الـ UHT المكلفة.');
+      } else if (pName.includes('بطاطا') && !tipsList.some((t) => t.includes('البطاطا'))) {
+        tipsList.push('💡 **حفظ وتوفير البطاطا**: اشترِ أكياس 5-10 كغ من أسواق الرحمة أو سوق الجملة، واحفظها بعيداً عن البصل في مكان جاف ومعتم لمنع التلف السريع.');
+      } else if (pName.includes('سكر') && !tipsList.some((t) => t.includes('السكر'))) {
+        tipsList.push('💡 **ترشيد السكر**: تقليل ملعقة سكر واحدة في المشروبات اليومية يخفض استهلاك الأسرة لـ 2 كغ شهرياً ويحمي الصحة.');
+      } else if (pName.includes('عدس') || pName.includes('حمص') || pName.includes('لوبيا')) {
+        tipsList.push('💡 **البقوليات الجافة**: توجه مباشرة إلى نقاط ديوان الحبوب (OAIC) لشراء البقوليات المعبأة بنصف أسعار الدكاكين المستوردة.');
+      }
+    });
+
+    const netSavings = Math.max(0, totalRetail - totalRahma);
+    const savingsPercent = totalRetail > 0 ? Math.round((netSavings / totalRetail) * 100) : 0;
+
+    return `تحليل مخصص لقفة التموين الخاصة بك في ولاية **${wilayaName}** 🛒:
+
+1. **التقرير المالي للقفة**:
+   • إجمالي تكلفة قفتك في محلات التجزئة العادية: **${totalRetail} د.ج**
+   • إجمالي التكلفة في أسواق الرحمة والمنافذ التضامنية: **${totalRahma} د.ج**
+   • **مبلغ التوفير المحقق**: **${netSavings} د.ج** (نسبة توفير حقيقية: **${savingsPercent}%**).
+
+2. **تشريح سلع القفة والبدائل الأوفر المتاحة**:
+${itemsLines.join('\n')}
+
+3. **نصائح استهلاك شخصية لترشيد نفقات قفتك**:
+${tipsList.length > 0 ? tipsList.join('\n') : '• اقتنِ السلع الأساسية بكميات أسبوعية متكاملة لتقليل تكاليف التنقل وضبط المصاريف.'}
+
+4. **خطة التسوق الذكية الموصى بها في ${wilayaName}**:
+   • الخضار والفواكه: اقتنها صباحاً من **${popularMarket}**.
+   • الدواجن والبيض: من نقاط بيع **مجمع أوناب (ONAB)**.
+   • الحبوب والسميد: من نقاط بيع **أغروديف (Agrodive)** و **تعاونية الحبوب (OAIC)**.
+بهذه الخطة توفر **${netSavings} د.ج** في فاتورة قفتك مع ضمان أعلى جودة غذائية لأسرتك.`;
+  }
 
   if (q.includes('ماقرو') || q.includes('ماغرو') || q.includes('ماڨرو') || q.includes('عثمانية') || q.includes('ميلة')) {
     return `مرحباً بك أخي المواطن. إليك الرصد الميداني لأسعار الخضر والفواكه بسوق الجملة الجهوي "ماڨرو" (MAGRO) - وادي العثمانية ولاية ميلة:

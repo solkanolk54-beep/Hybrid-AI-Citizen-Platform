@@ -4,10 +4,12 @@ import { Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, ShieldAlert, Arr
 
 interface ReceiptScannerViewProps {
   onOpenReportModalWithItem?: (productName: string, observedPrice: number) => void;
+  onReceiptScanned?: (result: ReceiptScanResult) => void;
 }
 
 export const ReceiptScannerView: React.FC<ReceiptScannerViewProps> = ({
   onOpenReportModalWithItem,
+  onReceiptScanned,
 }) => {
   const [selectedImageBase64, setSelectedImageBase64] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export const ReceiptScannerView: React.FC<ReceiptScannerViewProps> = ({
 
       const data: ReceiptScanResult = await response.json();
       setScanResult(data);
+      onReceiptScanned?.(data);
     } catch (err: unknown) {
       console.error(err);
       setError('حدث خطأ أثناء فحص صورة التذكرة. يرجى تجربة عينة أخرى أو التأكد من وضوح الصورة.');
